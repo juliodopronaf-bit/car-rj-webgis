@@ -527,8 +527,8 @@ const BASEMAPS = {
 };
 
 const map = L.map('map',{zoomControl:false}).setView([-22.35,-43.2],8);
-BASEMAPS.dark.addTo(map);
-let activeBasemap = 'dark';
+BASEMAPS.osm.addTo(map);
+let activeBasemap = 'osm';
 
 map.on('mousemove', e=>{
   document.getElementById('coords').textContent=`${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
@@ -616,10 +616,10 @@ function showLoad(msg='Carregando...',pct=10){
   const el=document.getElementById('load');
   el.classList.add('on');
   document.getElementById('lmsg').textContent=msg;
-  document.getElementById('lfill')||{style:{}}.style.width=pct+'%';
+  document.getElementById('lfill').style.width=pct+'%';
 }
 function setPct(pct,msg){
-  document.getElementById('lfill')||{style:{}}.style.width=pct+'%';
+  document.getElementById('lfill').style.width=pct+'%';
   if(msg) document.getElementById('lmsg').textContent=msg;
 }
 function hideLoad(){ document.getElementById('load').classList.remove('on'); }
