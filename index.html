@@ -643,7 +643,9 @@ async function loadMunicipio(){
   const mun=document.getElementById('sel-mun').value;
   if(!mun) return;
   currentMun=mun;
-  clearAllLayers();
+  // clear both layers and data when switching municipio
+  Object.keys(LAYERS).forEach(k=>{if(LAYERS[k]){map.removeLayer(LAYERS[k]);LAYERS[k]=null;}});
+  clearAllData();
   areaFilter=null; activeFilterBin=null;
   document.getElementById('filter-tag').style.display='none';
 
@@ -655,6 +657,7 @@ async function loadMunicipio(){
   }
   setPct(95,'Renderizando...');
   renderAllLayers();
+  map.invalidateSize();
   updateCounts();
   updateDashboard(mun);
   if(currentMode==='overlap') runOverlap();
@@ -711,7 +714,8 @@ function buildLayer(key){
 }
 
 function renderAllLayers(){
-  clearAllLayers();
+  // only clear map layers, NOT data
+  Object.keys(LAYERS).forEach(k=>{if(LAYERS[k]){map.removeLayer(LAYERS[k]);LAYERS[k]=null;}});
   // imovel
   if(document.getElementById('lyr-imovel').checked){
     const l=buildImovelLayer(); if(l){LAYERS.imovel=l;l.addTo(map);}
@@ -740,6 +744,9 @@ function toggleLyr(key){
 
 function clearAllLayers(){
   Object.keys(LAYERS).forEach(k=>{if(LAYERS[k]){map.removeLayer(LAYERS[k]);LAYERS[k]=null;}});
+}
+
+function clearAllData(){
   Object.keys(DATA).forEach(k=>DATA[k]=[]);
 }
 
@@ -1032,7 +1039,7 @@ function doSearch(){
       ? '<div style="padding:12px 14px;font-size:11px;color:var(--t4)">Nenhum resultado.</div>'
       : res.map(f=>{
           const p=f.properties;
-          return `<div class="sr" onclick="jumpTo('${p.municipio}','${p.cod_imovel}')">
+          return `<div class="sr" data-mun="${p.municipio}" data-cod="${p.cod_imovel}" onclick="jumpTo(this.dataset.mun,this.dataset.cod)">
             <div class="sr-cod">${p.cod_imovel||'—'}</div>
             <div class="sr-row">
               ${p.municipio||'—'}&nbsp;
