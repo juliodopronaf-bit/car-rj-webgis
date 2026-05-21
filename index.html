@@ -662,7 +662,7 @@ async function loadMunicipio(){
     updateCounts();
     updateDashboard(mun);
     if(currentMode==='overlap') runOverlap();
-    fitData();
+    fitData();`r`n  document.getElementById('load').style.display='none';
     hideLoad();
   },50);
   document.getElementById('mun-info').textContent=`${DATA.imovel.length.toLocaleString('pt-BR')} imoveis carregados`;
