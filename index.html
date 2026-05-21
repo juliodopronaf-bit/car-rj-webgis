@@ -1,0 +1,1158 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Geoportal CAR · Rio de Janeiro</title>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+:root{
+  --bg0:#0b0f19;--bg1:#111827;--bg2:#1a2235;--bg3:#1e2d42;--bg4:#243449;
+  --border:#1e3050;--border2:#2d4a6e;
+  --t1:#f0f6ff;--t2:#bfdbfe;--t3:#7fb3e8;--t4:#4a7fa8;
+  --green:#22d3a0;--green2:#10b981;--green-bg:rgba(16,185,129,.15);
+  --blue:#38bdf8;--blue-dark:#0369a1;
+  --amber:#f59e0b;--amber-bg:rgba(245,158,11,.12);
+  --red:#f87171;--red-bg:rgba(248,113,113,.12);
+  --accent:#22d3a0;
+  --sidebar:260px;
+}
+html,body{height:100%;overflow:hidden}
+body{font-family:'Inter','Segoe UI',system-ui,sans-serif;background:var(--bg0);color:var(--t1);display:flex;flex-direction:column}
+
+/* ── HEADER ─────────────────────────────── */
+#hd{height:52px;background:var(--bg1);border-bottom:1px solid var(--border);
+    display:flex;align-items:center;justify-content:space-between;
+    padding:0 16px;flex-shrink:0;z-index:200}
+.logo{display:flex;align-items:center;gap:10px}
+.logo-mark{width:32px;height:32px;border-radius:8px;
+  background:linear-gradient(135deg,#064e3b 0%,#22d3a0 100%);
+  display:flex;align-items:center;justify-content:center;font-size:16px;flex-shrink:0}
+.logo-text{line-height:1.2}
+.logo-text .title{font-size:13px;font-weight:700;color:var(--t1);letter-spacing:.2px}
+.logo-text .sub{font-size:10px;color:var(--t4);letter-spacing:.5px;text-transform:uppercase}
+.hd-right{display:flex;align-items:center;gap:6px}
+.hbtn{height:30px;padding:0 12px;border-radius:6px;border:1px solid var(--border2);
+  background:transparent;color:var(--t3);font-size:11px;cursor:pointer;
+  display:flex;align-items:center;gap:5px;transition:all .15s;white-space:nowrap}
+.hbtn:hover{background:var(--bg3);color:var(--t1);border-color:var(--blue)}
+.hbtn.active{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+.hbtn.warn.active{background:var(--red-bg);color:var(--red);border-color:var(--red)}
+
+/* ── BODY LAYOUT ─────────────────────────── */
+#body{display:flex;flex:1;overflow:hidden}
+
+/* ── SIDEBAR ─────────────────────────────── */
+#sb{width:var(--sidebar);background:var(--bg1);border-right:1px solid var(--border);
+    display:flex;flex-direction:column;overflow:hidden;flex-shrink:0}
+.sb-logo{padding:12px 14px 8px;border-bottom:1px solid var(--border)}
+.sb-logo img{max-height:28px;opacity:.85}
+.sb-logo span{font-size:9px;color:var(--t4);letter-spacing:.8px;text-transform:uppercase;display:block;margin-top:2px}
+
+/* Tabs */
+.tabs{display:flex;border-bottom:1px solid var(--border)}
+.tab{flex:1;padding:8px 0;font-size:10px;text-align:center;cursor:pointer;
+  color:var(--t4);letter-spacing:.4px;text-transform:uppercase;
+  border-bottom:2px solid transparent;transition:all .15s}
+.tab:hover{color:var(--t2)}
+.tab.on{color:var(--accent);border-bottom-color:var(--accent)}
+
+/* Tab panels */
+.tp{display:none;flex-direction:column;overflow-y:auto;flex:1;overflow-x:hidden}
+.tp.on{display:flex}
+.sec{padding:10px 14px 6px;font-size:9px;text-transform:uppercase;
+  letter-spacing:1.2px;color:var(--t4);font-weight:600;
+  border-top:1px solid var(--border);margin-top:2px}
+.sec:first-child{border-top:none;margin-top:0}
+
+/* Basemap buttons */
+.bmap-row{display:flex;gap:5px;padding:0 14px 10px}
+.bmap-btn{flex:1;padding:6px 0;font-size:10px;border-radius:5px;
+  border:1px solid var(--border2);background:var(--bg2);color:var(--t3);
+  cursor:pointer;text-align:center;transition:all .15s}
+.bmap-btn:hover{background:var(--bg3);color:var(--t1)}
+.bmap-btn.on{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+
+/* Layers */
+.lrow{display:flex;align-items:center;gap:8px;padding:5px 14px;cursor:pointer}
+.lrow label{display:flex;align-items:center;gap:7px;cursor:pointer;flex:1;font-size:12px;color:var(--t2)}
+.ldot{width:10px;height:10px;border-radius:2px;flex-shrink:0}
+.lcnt{font-size:10px;color:var(--t4);flex-shrink:0}
+input[type=checkbox]{accent-color:var(--accent);width:13px;height:13px;flex-shrink:0}
+
+/* Classification */
+.cls-row{display:flex;gap:5px;padding:0 14px 8px}
+.cls-btn{flex:1;padding:6px 0;font-size:10px;border-radius:5px;
+  border:1px solid var(--border2);background:var(--bg2);color:var(--t3);
+  cursor:pointer;text-align:center;transition:all .15s;line-height:1.3}
+.cls-btn:hover{background:var(--bg3);color:var(--t1)}
+.cls-btn.on{background:var(--blue-dark);color:var(--blue);border-color:var(--blue)}
+
+/* Legend */
+#legend-box{padding:0 14px 10px}
+.leg-item{display:flex;align-items:center;gap:7px;padding:2px 0;font-size:11px;color:var(--t2)}
+.leg-swatch{width:12px;height:12px;border-radius:2px;flex-shrink:0}
+
+/* Stats / charts */
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px;padding:0 14px 8px}
+.sc{background:var(--bg2);border:1px solid var(--border);border-radius:7px;padding:8px 10px}
+.sc .lbl{font-size:9px;text-transform:uppercase;letter-spacing:.5px;color:var(--t4);margin-bottom:2px}
+.sc .val{font-size:16px;font-weight:700;color:var(--t1)}
+.sc .val.g{color:var(--green)}
+.sc .val.b{color:var(--blue)}
+.sc .val.r{color:var(--red)}
+.sc .val.y{color:var(--amber)}
+.prog-row{padding:0 14px 5px}
+.prog-lbl{display:flex;justify-content:space-between;font-size:10px;color:var(--t3);margin-bottom:3px}
+.prog-bar{height:4px;background:var(--bg3);border-radius:2px}
+.prog-fill{height:100%;border-radius:2px;transition:width .5s}
+.chart-wrap{padding:0 14px 10px;position:relative}
+.chart-wrap canvas{cursor:pointer}
+.chart-title{font-size:10px;color:var(--t4);text-transform:uppercase;letter-spacing:.5px;margin-bottom:5px}
+.filter-tag{display:flex;align-items:center;justify-content:space-between;
+  margin:0 14px 8px;padding:5px 9px;background:var(--amber-bg);
+  border:1px solid rgba(245,158,11,.3);border-radius:5px;font-size:11px;color:var(--amber);display:none}
+
+/* Busca */
+.search-input{width:calc(100% - 28px);margin:0 14px 8px;display:block;
+  background:var(--bg2);border:1px solid var(--border2);color:var(--t1);
+  font-size:12px;padding:6px 9px;border-radius:6px;outline:none}
+.search-input:focus{border-color:var(--accent)}
+.search-input::placeholder{color:var(--t4)}
+select.search-input{margin-bottom:5px}
+.sr{padding:7px 14px;border-bottom:1px solid var(--border);cursor:pointer;transition:background .12s}
+.sr:hover{background:var(--bg2)}
+.sr-cod{font-size:9px;color:var(--t4);word-break:break-all;margin-bottom:2px}
+.sr-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2);flex-wrap:wrap}
+.badge{display:inline-block;padding:1px 6px;border-radius:10px;font-size:9px;font-weight:700}
+.b-at{background:#064e3b;color:#22d3a0}
+.b-pe{background:#451a03;color:#fb923c}
+.b-ca{background:#3b0764;color:#c084fc}
+.b-su{background:#1e1b4b;color:#818cf8}
+
+/* Info box */
+.info-box{padding:10px 14px;border-top:1px solid var(--border);margin-top:auto;flex-shrink:0}
+.info-title{font-size:10px;text-transform:uppercase;letter-spacing:.8px;color:var(--accent);margin-bottom:6px}
+.ifield{display:flex;justify-content:space-between;padding:3px 0;border-bottom:1px solid var(--border);font-size:11px}
+.ifield:last-child{border-bottom:none}
+.ik{color:var(--t4)}.iv{color:var(--t1);max-width:150px;text-align:right;word-break:break-all;font-size:10px}
+
+/* Overlap panel */
+#ov-list{overflow-y:auto;max-height:220px}
+.ov-item{padding:7px 14px;border-bottom:1px solid var(--border);font-size:10px;cursor:pointer}
+.ov-item:hover{background:var(--bg2)}
+.ov-pair{color:var(--t3);margin-bottom:2px;word-break:break-all}
+.ov-meta{display:flex;justify-content:space-between}
+.ov-type{color:var(--t4)}.ov-ha{color:var(--red);font-weight:700}
+
+/* ── MAP ──────────────────────────────────── */
+#map-wrap{flex:1;position:relative;overflow:hidden}
+#map{width:100%;height:100%}
+
+/* toolbar */
+#tb{position:absolute;top:12px;left:12px;z-index:400;display:flex;flex-direction:column;gap:4px}
+.tbtn{width:30px;height:30px;background:var(--bg1)dd;backdrop-filter:blur(6px);
+  border:1px solid var(--border2);border-radius:5px;color:var(--t3);
+  cursor:pointer;font-size:12px;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.tbtn:hover{color:var(--t1);border-color:var(--accent);background:var(--bg2)}
+.tbtn.on{background:var(--green-bg);color:var(--green);border-color:var(--green)}
+
+/* map legend */
+#map-leg{position:absolute;bottom:28px;right:12px;z-index:400;
+  background:var(--bg1)ee;backdrop-filter:blur(8px);
+  border:1px solid var(--border);border-radius:8px;padding:10px 14px;min-width:160px;max-width:220px}
+.ml-sec{font-size:9px;text-transform:uppercase;letter-spacing:.8px;color:var(--t4);margin-bottom:6px}
+.ml-row{display:flex;align-items:center;gap:6px;font-size:11px;color:var(--t2);margin-bottom:3px}
+.ml-dot{width:11px;height:11px;border-radius:2px;flex-shrink:0}
+
+/* coords */
+#coords{position:absolute;bottom:7px;left:50%;transform:translateX(-50%);z-index:400;
+  background:var(--bg1)cc;backdrop-filter:blur(4px);border:1px solid var(--border);
+  border-radius:4px;padding:2px 12px;font-size:9px;color:var(--t4)}
+
+/* tooltip */
+#tip{position:absolute;z-index:500;background:var(--bg1)f0;backdrop-filter:blur(6px);
+  border:1px solid var(--border2);border-radius:6px;padding:7px 10px;
+  font-size:11px;color:var(--t2);pointer-events:none;display:none;max-width:220px;line-height:1.6}
+
+/* loading */
+#load{position:fixed;inset:0;background:var(--bg0)f0;z-index:9999;
+  display:none;align-items:center;justify-content:center;flex-direction:column;gap:10px}
+#load.on{display:flex}
+.spin{width:36px;height:36px;border:3px solid var(--bg3);border-top-color:var(--accent);
+  border-radius:50%;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#lmsg{font-size:12px;color:var(--t3)}
+#lbar{width:220px;height:3px;background:var(--bg3);border-radius:2px}
+#lfill{height:100%;background:var(--accent);border-radius:2px;width:0;transition:width .3s}
+
+.leaflet-control-attribution{font-size:8px!important;background:var(--bg1)cc!important;color:var(--t4)!important}
+.leaflet-control-attribution a{color:var(--t4)!important}
+.leaflet-popup-content-wrapper{background:var(--bg1);border:1px solid var(--border2);color:var(--t1);border-radius:8px}
+.leaflet-popup-tip{background:var(--bg1)}
+</style>
+</head>
+<body>
+
+
+<div id="file-proto-warn" style="display:none;position:fixed;top:52px;left:0;right:0;z-index:9998;
+background:#7c2d12;border-bottom:2px solid #f97316;padding:10px 20px;
+font-size:13px;color:#fed7aa;text-align:center">
+⚠️ <strong>Você abriu o arquivo diretamente no navegador.</strong> &nbsp;
+O mapa não vai carregar assim. &nbsp;
+<strong>Execute um servidor local:</strong> &nbsp;
+<code style="background:#431407;padding:2px 8px;border-radius:4px">python3 -m http.server 8080</code>
+&nbsp; depois acesse &nbsp;
+<code style="background:#431407;padding:2px 8px;border-radius:4px">http://localhost:8080</code>
+&nbsp;·&nbsp; Veja o arquivo <strong>LEIA-ME.txt</strong> para mais opções.
+<span onclick="document.getElementById('file-proto-warn').style.display='none'"
+  style="float:right;cursor:pointer;font-size:16px">✕</span>
+</div>
+<div id="load">
+  <div class="spin"></div>
+  <div id="lmsg">Iniciando Geoportal CAR/RJ...</div>
+  <div id="lbar"><div id="lfill"></div></div>
+</div>
+
+<!-- HEADER -->
+<div id="hd">
+  <div class="logo">
+    <div class="logo-mark">🌿</div>
+    <div class="logo-text">
+      <div class="title">Geoportal CAR</div>
+      <div class="sub">Rio de Janeiro · SICAR 2026</div>
+    </div>
+  </div>
+  <div class="hd-right">
+    <button class="hbtn on" id="btn-explore" onclick="setMode('explore')">🗺 Explorar</button>
+    <button class="hbtn warn" id="btn-overlap" onclick="setMode('overlap')">⚠ Sobreposições</button>
+    <button class="hbtn" onclick="exportData()">⬇ GeoJSON</button>
+    <button class="hbtn" onclick="showSQL()">💾 SQL</button>
+  </div>
+</div>
+
+<div id="body">
+<!-- ── SIDEBAR ── -->
+<div id="sb">
+
+  <div class="tabs">
+    <div class="tab on" id="tab-layers" onclick="showTab('layers')">Camadas</div>
+    <div class="tab" id="tab-stats" onclick="showTab('stats')">Dashboard</div>
+    <div class="tab" id="tab-search" onclick="showTab('search')">Busca</div>
+  </div>
+
+  <!-- TAB CAMADAS -->
+  <div class="tp on" id="tp-layers">
+    <div class="sec">Município</div>
+    <select class="search-input" id="sel-mun" onchange="loadMunicipio()" style="margin-bottom:4px">
+      <option value="">— Selecione um município —</option>
+      <option value="Angra dos Reis">Angra dos Reis</option>
+      <option value="Aperibe">Aperibe</option>
+      <option value="Araruama">Araruama</option>
+      <option value="Areal">Areal</option>
+      <option value="Armacao dos Buzios">Armacao dos Buzios</option>
+      <option value="Arraial do Cabo">Arraial do Cabo</option>
+      <option value="Barra Mansa">Barra Mansa</option>
+      <option value="Barra do Pirai">Barra do Pirai</option>
+      <option value="Belford Roxo">Belford Roxo</option>
+      <option value="Bom Jardim">Bom Jardim</option>
+      <option value="Bom Jesus do Itabapoana">Bom Jesus do Itabapoana</option>
+      <option value="Cabo Frio">Cabo Frio</option>
+      <option value="Cachoeiras de Macacu">Cachoeiras de Macacu</option>
+      <option value="Cambuci">Cambuci</option>
+      <option value="Campos dos Goytacazes">Campos dos Goytacazes</option>
+      <option value="Cantagalo">Cantagalo</option>
+      <option value="Carapebus">Carapebus</option>
+      <option value="Cardoso Moreira">Cardoso Moreira</option>
+      <option value="Carmo">Carmo</option>
+      <option value="Casimiro de Abreu">Casimiro de Abreu</option>
+      <option value="Comendador Levy Gasparian">Comendador Levy Gasparian</option>
+      <option value="Conceicao de Macabu">Conceicao de Macabu</option>
+      <option value="Cordeiro">Cordeiro</option>
+      <option value="Duas Barras">Duas Barras</option>
+      <option value="Duque de Caxias">Duque de Caxias</option>
+      <option value="Engenheiro Paulo de Frontin">Engenheiro Paulo de Frontin</option>
+      <option value="Guapimirim">Guapimirim</option>
+      <option value="Iguaba Grande">Iguaba Grande</option>
+      <option value="Itaborai">Itaborai</option>
+      <option value="Itaguai">Itaguai</option>
+      <option value="Italva">Italva</option>
+      <option value="Itaocara">Itaocara</option>
+      <option value="Itaperuna">Itaperuna</option>
+      <option value="Itatiaia">Itatiaia</option>
+      <option value="Japeri">Japeri</option>
+      <option value="Laje do Muriae">Laje do Muriae</option>
+      <option value="Macae">Macae</option>
+      <option value="Macuco">Macuco</option>
+      <option value="Mage">Mage</option>
+      <option value="Mangaratiba">Mangaratiba</option>
+      <option value="Marica">Marica</option>
+      <option value="Mendes">Mendes</option>
+      <option value="Mesquita">Mesquita</option>
+      <option value="Miguel Pereira">Miguel Pereira</option>
+      <option value="Miracema">Miracema</option>
+      <option value="Natividade">Natividade</option>
+      <option value="Niteroi">Niteroi</option>
+      <option value="Nova Friburgo">Nova Friburgo</option>
+      <option value="Nova Iguacu">Nova Iguacu</option>
+      <option value="Paracambi">Paracambi</option>
+      <option value="Paraiba do Sul">Paraiba do Sul</option>
+      <option value="Paraty">Paraty</option>
+      <option value="Paty do Alferes">Paty do Alferes</option>
+      <option value="Petropolis">Petropolis</option>
+      <option value="Pinheiral">Pinheiral</option>
+      <option value="Pirai">Pirai</option>
+      <option value="Porciuncula">Porciuncula</option>
+      <option value="Porto Real">Porto Real</option>
+      <option value="Quatis">Quatis</option>
+      <option value="Queimados">Queimados</option>
+      <option value="Quissama">Quissama</option>
+      <option value="Resende">Resende</option>
+      <option value="Rio Bonito">Rio Bonito</option>
+      <option value="Rio Claro">Rio Claro</option>
+      <option value="Rio das Flores">Rio das Flores</option>
+      <option value="Rio das Ostras">Rio das Ostras</option>
+      <option value="Rio de Janeiro">Rio de Janeiro</option>
+      <option value="Santa Maria Madalena">Santa Maria Madalena</option>
+      <option value="Santo Antonio de Padua">Santo Antonio de Padua</option>
+      <option value="Sao Fidelis">Sao Fidelis</option>
+      <option value="Sao Francisco de Itabapoana">Sao Francisco de Itabapoana</option>
+      <option value="Sao Goncalo">Sao Goncalo</option>
+      <option value="Sao Joao da Barra">Sao Joao da Barra</option>
+      <option value="Sao Jose de Uba">Sao Jose de Uba</option>
+      <option value="Sao Jose do Vale do Rio Preto">Sao Jose do Vale do Rio Preto</option>
+      <option value="Sao Pedro da Aldeia">Sao Pedro da Aldeia</option>
+      <option value="Sao Sebastiao do Alto">Sao Sebastiao do Alto</option>
+      <option value="Sapucaia">Sapucaia</option>
+      <option value="Saquarema">Saquarema</option>
+      <option value="Seropedica">Seropedica</option>
+      <option value="Silva Jardim">Silva Jardim</option>
+      <option value="Sumidouro">Sumidouro</option>
+      <option value="Tangua">Tangua</option>
+      <option value="Teresopolis">Teresopolis</option>
+      <option value="Trajano de Moraes">Trajano de Moraes</option>
+      <option value="Tres Rios">Tres Rios</option>
+      <option value="Valenca">Valenca</option>
+      <option value="Varre-Sai">Varre-Sai</option>
+      <option value="Vassouras">Vassouras</option>
+      <option value="Volta Redonda">Volta Redonda</option>
+    </select>
+    <div style="font-size:10px;color:var(--t4);padding:0 14px 8px" id="mun-info"></div>
+
+    <div class="sec">Mapas de Fundo</div>
+    <div class="bmap-row">
+      <button class="bmap-btn on" onclick="setBasemap('dark')" id="bm-dark">Dark</button>
+      <button class="bmap-btn" onclick="setBasemap('osm')" id="bm-osm">OSM</button>
+      <button class="bmap-btn" onclick="setBasemap('sat')" id="bm-sat">Satélite</button>
+    </div>
+
+    <div class="sec">Camadas Operacionais</div>
+    <div class="lrow"><label><input type="checkbox" id="lyr-imovel" checked onchange="toggleLyr('imovel')">
+      <span class="ldot" style="background:#38bdf8"></span>Imóveis Rurais (CAR)</label>
+      <span class="lcnt" id="cnt-imovel">—</span></div>
+    <div class="lrow"><label><input type="checkbox" id="lyr-rl" onchange="toggleLyr('rl')">
+      <span class="ldot" style="background:#22d3a0"></span>Reserva Legal</label>
+      <span class="lcnt" id="cnt-rl">—</span></div>
+    <div class="lrow"><label><input type="checkbox" id="lyr-hidro" onchange="toggleLyr('hidro')">
+      <span class="ldot" style="background:#06b6d4"></span>Hidrografia / APP</label>
+      <span class="lcnt" id="cnt-hidro">—</span></div>
+    <div class="lrow"><label><input type="checkbox" id="lyr-consolidada" onchange="toggleLyr('consolidada')">
+      <span class="ldot" style="background:#f59e0b"></span>Área Consolidada</label>
+      <span class="lcnt" id="cnt-consolidada">—</span></div>
+    <div class="lrow"><label><input type="checkbox" id="lyr-veg" onchange="toggleLyr('veg')">
+      <span class="ldot" style="background:#4ade80"></span>Vegetação Nativa</label>
+      <span class="lcnt" id="cnt-veg">—</span></div>
+    <div class="lrow"><label><input type="checkbox" id="lyr-serv" onchange="toggleLyr('serv')">
+      <span class="ldot" style="background:#a78bfa"></span>Servidão Adm.</label>
+      <span class="lcnt" id="cnt-serv">—</span></div>
+    <div class="lrow"><label><input type="checkbox" id="lyr-uso" onchange="toggleLyr('uso')">
+      <span class="ldot" style="background:#fb923c"></span>Uso Restrito</label>
+      <span class="lcnt" id="cnt-uso">—</span></div>
+    <div class="lrow" id="row-ov" style="display:none">
+      <label><input type="checkbox" id="lyr-overlap" checked onchange="toggleLyr('overlap')">
+      <span class="ldot" style="background:#f87171;outline:2px dashed #991b1b;outline-offset:-2px"></span>Sobreposições</label>
+      <span class="lcnt" id="cnt-ov">—</span></div>
+
+    <div class="sec">Classificação dos Imóveis</div>
+    <div class="cls-row">
+      <button class="cls-btn on" id="cls-none" onclick="setClass('none')">Nenhuma</button>
+      <button class="cls-btn" id="cls-status" onclick="setClass('status')">Situação</button>
+      <button class="cls-btn" id="cls-area" onclick="setClass('area')">Área (ha)</button>
+    </div>
+
+    <div class="sec">Legenda Temática</div>
+    <div id="legend-box" style="padding:0 14px 10px">
+      <div style="font-size:11px;color:var(--t4);font-style:italic">Selecione uma classificação</div>
+    </div>
+
+    <!-- Info box -->
+    <div class="info-box">
+      <div class="info-title">ℹ Atributos</div>
+      <div id="info-box" style="font-size:11px;color:var(--t4);font-style:italic">Clique em um imóvel</div>
+    </div>
+  </div><!-- /tp-layers -->
+
+  <!-- TAB DASHBOARD -->
+  <div class="tp" id="tp-stats">
+    <div id="dash-empty" style="padding:24px 14px;text-align:center;color:var(--t4);font-size:12px">
+      <div style="font-size:32px;margin-bottom:8px">📊</div>
+      Selecione um município para ver o dashboard
+    </div>
+    <div id="dash-content" style="display:none">
+      <div class="sec" id="dash-mun-title">Estatísticas</div>
+      <div class="stat-grid">
+        <div class="sc"><div class="lbl">Imóveis</div><div class="val g" id="d-n">—</div></div>
+        <div class="sc"><div class="lbl">Área total</div><div class="val b" id="d-area">—</div></div>
+        <div class="sc"><div class="lbl">Com RL</div><div class="val g" id="d-rl">—</div></div>
+        <div class="sc"><div class="lbl">Sem RL</div><div class="val r" id="d-semrl">—</div></div>
+      </div>
+      <div class="prog-row">
+        <div class="prog-lbl"><span>Reserva Legal</span><span id="d-prl">—</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="bar-rl" style="background:#22d3a0;width:0%"></div></div>
+      </div>
+      <div class="prog-row">
+        <div class="prog-lbl"><span>Hidrografia/APP</span><span id="d-ph">—</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="bar-hidro" style="background:#06b6d4;width:0%"></div></div>
+      </div>
+      <div class="prog-row" style="padding-bottom:10px">
+        <div class="prog-lbl"><span>Uso Restrito</span><span id="d-pu">—</span></div>
+        <div class="prog-bar"><div class="prog-fill" id="bar-uso" style="background:#fb923c;width:0%"></div></div>
+      </div>
+
+      <div class="sec">Situação do CAR</div>
+      <div class="chart-wrap"><div class="chart-title" style="display:none">Clique para filtrar</div><canvas id="ch-status" height="130"></canvas></div>
+
+      <div class="sec">Condição Analítica</div>
+      <div class="chart-wrap"><canvas id="ch-condic" height="160"></canvas></div>
+
+      <div class="sec">Distribuição de Área (ha)</div>
+      <div style="font-size:9px;color:var(--t4);padding:0 14px 3px">Clique em uma barra para filtrar no mapa</div>
+      <div class="filter-tag" id="filter-tag">
+        <span id="filter-label">Filtro ativo</span>
+        <span style="cursor:pointer;font-size:13px" onclick="clearFilter()">✕</span>
+      </div>
+      <div class="chart-wrap"><canvas id="ch-area" height="130"></canvas></div>
+    </div>
+  </div><!-- /tp-stats -->
+
+  <!-- TAB BUSCA -->
+  <div class="tp" id="tp-search">
+    <div style="padding:10px 0 0">
+      <input class="search-input" type="text" id="s-cod" placeholder="Código CAR (ex: RJ-330…)" oninput="doSearch()">
+      <input class="search-input" type="text" id="s-mun" placeholder="Município" oninput="doSearch()" list="mun-dl">
+      <datalist id="mun-dl"><option value="Angra dos Reis"><option value="Aperibe"><option value="Araruama"><option value="Areal"><option value="Armacao dos Buzios"><option value="Arraial do Cabo"><option value="Barra Mansa"><option value="Barra do Pirai"><option value="Belford Roxo"><option value="Bom Jardim"><option value="Bom Jesus do Itabapoana"><option value="Cabo Frio"><option value="Cachoeiras de Macacu"><option value="Cambuci"><option value="Campos dos Goytacazes"><option value="Cantagalo"><option value="Carapebus"><option value="Cardoso Moreira"><option value="Carmo"><option value="Casimiro de Abreu"><option value="Comendador Levy Gasparian"><option value="Conceicao de Macabu"><option value="Cordeiro"><option value="Duas Barras"><option value="Duque de Caxias"><option value="Engenheiro Paulo de Frontin"><option value="Guapimirim"><option value="Iguaba Grande"><option value="Itaborai"><option value="Itaguai"><option value="Italva"><option value="Itaocara"><option value="Itaperuna"><option value="Itatiaia"><option value="Japeri"><option value="Laje do Muriae"><option value="Macae"><option value="Macuco"><option value="Mage"><option value="Mangaratiba"><option value="Marica"><option value="Mendes"><option value="Mesquita"><option value="Miguel Pereira"><option value="Miracema"><option value="Natividade"><option value="Niteroi"><option value="Nova Friburgo"><option value="Nova Iguacu"><option value="Paracambi"><option value="Paraiba do Sul"><option value="Paraty"><option value="Paty do Alferes"><option value="Petropolis"><option value="Pinheiral"><option value="Pirai"><option value="Porciuncula"><option value="Porto Real"><option value="Quatis"><option value="Queimados"><option value="Quissama"><option value="Resende"><option value="Rio Bonito"><option value="Rio Claro"><option value="Rio das Flores"><option value="Rio das Ostras"><option value="Rio de Janeiro"><option value="Santa Maria Madalena"><option value="Santo Antonio de Padua"><option value="Sao Fidelis"><option value="Sao Francisco de Itabapoana"><option value="Sao Goncalo"><option value="Sao Joao da Barra"><option value="Sao Jose de Uba"><option value="Sao Jose do Vale do Rio Preto"><option value="Sao Pedro da Aldeia"><option value="Sao Sebastiao do Alto"><option value="Sapucaia"><option value="Saquarema"><option value="Seropedica"><option value="Silva Jardim"><option value="Sumidouro"><option value="Tangua"><option value="Teresopolis"><option value="Trajano de Moraes"><option value="Tres Rios"><option value="Valenca"><option value="Varre-Sai"><option value="Vassouras"><option value="Volta Redonda"></datalist>
+      <select class="search-input" id="s-tipo" onchange="doSearch()">
+        <option value="">Tipo: todos</option>
+        <option value="IRU">IRU – Imóvel Rural</option>
+        <option value="AST">AST – Assentamento</option>
+        <option value="PCT">PCT – Povo/Comunidade</option>
+      </select>
+      <div style="font-size:10px;color:var(--t4);padding:0 14px 6px" id="s-count">60.313 imóveis indexados</div>
+    </div>
+    <div id="s-results" style="overflow-y:auto;flex:1"></div>
+    <div style="padding:8px 14px;font-size:9px;color:var(--t4);border-top:1px solid var(--border);text-align:center">
+      Busca indexada · todos os 60.313 imóveis do RJ
+    </div>
+  </div><!-- /tp-search -->
+
+</div><!-- /sb -->
+
+<!-- MAP -->
+<div id="map-wrap">
+  <div id="map"></div>
+  <div id="tip"></div>
+
+  <div id="tb">
+    <button class="tbtn" onclick="map.zoomIn()" title="+">+</button>
+    <button class="tbtn" onclick="map.zoomOut()" title="−">−</button>
+    <button class="tbtn" onclick="goHome()" title="RJ">⌂</button>
+    <button class="tbtn" onclick="fitData()" title="Zoom dados">⊡</button>
+    <button class="tbtn" id="tb-medir" onclick="toggleMedir()" title="Medir">📐</button>
+  </div>
+
+  <div id="map-leg">
+    <div class="ml-sec">Camadas ativas</div>
+    <div id="ml-rows">
+      <div class="ml-row"><span class="ml-dot" style="background:#38bdf8;opacity:.7"></span>Área do Imóvel</div>
+    </div>
+    <div id="ml-ov-row" style="display:none">
+      <div class="ml-row" style="margin-top:4px;padding-top:4px;border-top:1px solid var(--border)">
+        <span class="ml-dot" style="background:#f87171;outline:2px dashed #991b1b;outline-offset:-2px"></span>CAR×CAR
+        <span class="ml-dot" style="background:#fb923c;outline:2px dashed #c2410c;outline-offset:-2px;margin-left:4px"></span>CAR×APP
+      </div>
+    </div>
+  </div>
+  <div id="coords">—</div>
+</div>
+</div><!-- /body -->
+
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@turf/turf@6/turf.min.js"></script>
+<script>
+// ── DADOS ───────────────────────────────────────────────────
+const STATS    = {"Angra dos Reis":{"n":277,"area":66637.51,"status":{"AT":262,"PE":6,"SU":3,"CA":6},"tipo":{"IRU":277},"condic":{"Aguardando analise":254,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Analisado, aguardando atendimento a notificacao":12,"Em analise":3,"Cancelado por decisao administrativa":6},"com_hidro":120,"com_rl":168,"com_uso":83,"com_veg":174,"sem_rl":109,"pct_rl":60.6,"pct_hidro":43.3},"Aperibe":{"n":343,"area":139535.87,"status":{"PE":29,"AT":302,"CA":12},"tipo":{"IRU":343},"condic":{"Analisado, aguardando atendimento a notificacao":27,"Aguardando analise":302,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Cancelado por decisao administrativa":12},"com_hidro":27,"com_rl":104,"com_uso":7,"com_veg":18,"sem_rl":239,"pct_rl":30.3,"pct_hidro":7.9},"Araruama":{"n":606,"area":41272.65,"status":{"PE":324,"AT":276,"CA":6},"tipo":{"IRU":606},"condic":{"Analisado, aguardando atendimento a notificacao":324,"Em analise":24,"Aguardando analise":238,"Aguardando analise, apos revisao ou atendimento da notificacao":8,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":4,"Analisado, em conformidade com a Lei n 12.651/2012":2,"Cancelado por duplicidade":2,"Cancelado por solicitacao do proprietario/possuidor":2,"Cancelado por decisao administrativa":2},"com_hidro":79,"com_rl":298,"com_uso":0,"com_veg":87,"sem_rl":308,"pct_rl":49.2,"pct_hidro":13.0},"Areal":{"n":184,"area":9207.06,"status":{"AT":176,"SU":5,"PE":3},"tipo":{"IRU":184},"condic":{"Aguardando analise":170,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Analisado, aguardando atendimento a notificacao":11,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":1},"com_hidro":58,"com_rl":108,"com_uso":21,"com_veg":75,"sem_rl":76,"pct_rl":58.7,"pct_hidro":31.5},"Armacao dos Buzios":{"n":28,"area":4223.85,"status":{"AT":26,"PE":2},"tipo":{"IRU":28},"condic":{"Aguardando analise":24,"Analisado, aguardando atendimento a notificacao":3,"Aguardando analise, apos revisao ou atendimento da notificacao":1},"com_hidro":1,"com_rl":14,"com_uso":1,"com_veg":10,"sem_rl":14,"pct_rl":50.0,"pct_hidro":3.6},"Arraial do Cabo":{"n":4,"area":51795.43,"status":{"AT":4},"tipo":{"PCT":1,"IRU":3},"condic":{"Aguardando analise":3,"Analisado, aguardando atendimento a notificacao":1},"com_hidro":0,"com_rl":1,"com_uso":0,"com_veg":0,"sem_rl":3,"pct_rl":25.0,"pct_hidro":0.0},"Barra do Pirai":{"n":579,"area":47678.74,"status":{"AT":536,"PE":28,"SU":7,"CA":8},"tipo":{"IRU":577,"AST":2},"condic":{"Aguardando analise":508,"Analisado, aguardando atendimento a notificacao":47,"Aguardando analise, apos revisao ou atendimento da notificacao":5,"Em analise":11,"Cancelado por duplicidade":1,"Cancelado por decisao administrativa":7},"com_hidro":296,"com_rl":388,"com_uso":57,"com_veg":251,"sem_rl":191,"pct_rl":67.0,"pct_hidro":51.1},"Barra Mansa":{"n":495,"area":44417.51,"status":{"AT":460,"PE":26,"SU":2,"CA":7},"tipo":{"IRU":493,"AST":2},"condic":{"Aguardando analise":436,"Analisado, aguardando atendimento a notificacao":28,"Aguardando analise, apos revisao ou atendimento da notificacao":7,"Em analise":16,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Cancelado por duplicidade":1,"Cancelado por solicitacao do proprietario/possuidor":5,"Cancelado por decisao administrativa":1},"com_hidro":349,"com_rl":332,"com_uso":93,"com_veg":232,"sem_rl":163,"pct_rl":67.1,"pct_hidro":70.5},"Belford Roxo":{"n":12,"area":460.97,"status":{"AT":11,"PE":1},"tipo":{"IRU":12},"condic":{"Aguardando analise":11,"Analisado, aguardando atendimento a notificacao":1},"com_hidro":3,"com_rl":3,"com_uso":0,"com_veg":3,"sem_rl":9,"pct_rl":25.0,"pct_hidro":25.0},"Bom Jardim":{"n":1339,"area":36597.41,"status":{"AT":1311,"PE":18,"CA":10},"tipo":{"IRU":1339},"condic":{"Aguardando analise":1310,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Analisado, aguardando atendimento a notificacao":12,"Cancelado por duplicidade":2,"Em analise":5,"Cancelado por decisao administrativa":8},"com_hidro":318,"com_rl":636,"com_uso":113,"com_veg":477,"sem_rl":703,"pct_rl":47.5,"pct_hidro":23.7},"Bom Jesus do Itabapoana":{"n":1434,"area":55388.09,"status":{"AT":1337,"PE":85,"CA":12},"tipo":{"IRU":1434},"condic":{"Em analise":2,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":3,"Aguardando analise":1319,"Analisado, aguardando atendimento a notificacao":85,"Cancelado por solicitacao do proprietario/possuidor":1,"Aguardando analise, apos revisao ou atendimento da notificacao":8,"Cancelado por decisao administrativa":10,"Cancelado por duplicidade":1,"Analisado, em conformidade com a Lei n 12.651/2012":5},"com_hidro":583,"com_rl":643,"com_uso":308,"com_veg":293,"sem_rl":791,"pct_rl":44.8,"pct_hidro":40.7},"Cabo Frio":{"n":207,"area":21664.7,"status":{"AT":102,"PE":101,"SU":1,"CA":3},"tipo":{"IRU":202,"PCT":2,"AST":3},"condic":{"Em analise":10,"Analisado, aguardando atendimento a notificacao":109,"Aguardando analise":81,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2,"Cancelado por solicitacao do proprietario/possuidor":1,"Cancelado por duplicidade":1,"Cancelado por decisao administrativa":1},"com_hidro":37,"com_rl":100,"com_uso":0,"com_veg":35,"sem_rl":107,"pct_rl":48.3,"pct_hidro":17.9},"Cachoeiras de Macacu":{"n":1504,"area":78857.31,"status":{"AT":1252,"PE":206,"CA":41,"SU":5},"tipo":{"IRU":1504},"condic":{"Aguardando analise":1133,"Analisado, aguardando atendimento a notificacao":246,"Aguardando analise, apos revisao ou atendimento da notificacao":16,"Cancelado por solicitacao do proprietario/possuidor":8,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":2,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":3,"Analisado, em conformidade com a Lei n 12.651/2012":48,"Em analise":15,"Cancelado por duplicidade":1,"Cancelado por decisao administrativa":32},"com_hidro":416,"com_rl":764,"com_uso":208,"com_veg":597,"sem_rl":740,"pct_rl":50.8,"pct_hidro":27.7},"Cambuci":{"n":1214,"area":614970.57,"status":{"AT":1111,"PE":74,"CA":29},"tipo":{"IRU":1214},"condic":{"Em analise":2,"Aguardando analise":1096,"Aguardando analise, apos revisao ou atendimento da notificacao":4,"Analisado, em conformidade com a Lei n 12.651/2012":8,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Analisado, aguardando atendimento a notificacao":74,"Cancelado por decisao administrativa":25,"Cancelado por solicitacao do proprietario/possuidor":1,"Cancelado por duplicidade":3},"com_hidro":237,"com_rl":515,"com_uso":89,"com_veg":215,"sem_rl":699,"pct_rl":42.4,"pct_hidro":19.5},"Carapebus":{"n":261,"area":19295.83,"status":{"AT":190,"PE":71},"tipo":{"IRU":258,"AST":3},"condic":{"Aguardando analise":185,"Analisado, aguardando atendimento a notificacao":71,"Aguardando analise, apos revisao ou atendimento da notificacao":3,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2},"com_hidro":90,"com_rl":106,"com_uso":1,"com_veg":55,"sem_rl":155,"pct_rl":40.6,"pct_hidro":34.5},"Comendador Levy Gasparian":{"n":75,"area":6709.63,"status":{"AT":74,"CA":1},"tipo":{"IRU":75},"condic":{"Aguardando analise":74,"Cancelado por duplicidade":1},"com_hidro":31,"com_rl":51,"com_uso":1,"com_veg":30,"sem_rl":24,"pct_rl":68.0,"pct_hidro":41.3},"Campos dos Goytacazes":{"n":5207,"area":635791.25,"status":{"AT":4518,"PE":541,"CA":140,"SU":8},"tipo":{"IRU":5198,"AST":9},"condic":{"Em analise":16,"Aguardando analise":2697,"Analisado, aguardando atendimento a notificacao":1797,"Aguardando analise, apos revisao ou atendimento da notificacao":67,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":142,"Cancelado por solicitacao do proprietario/possuidor":16,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":5,"Cancelado por decisao administrativa":111,"Analisado, em conformidade com a Lei n 12.651/2012":343,"Cancelado por duplicidade":13},"com_hidro":1062,"com_rl":1604,"com_uso":115,"com_veg":638,"sem_rl":3603,"pct_rl":30.8,"pct_hidro":20.4},"Cantagalo":{"n":1330,"area":102884.9,"status":{"AT":1266,"PE":54,"CA":10},"tipo":{"IRU":1330},"condic":{"Aguardando analise":1272,"Analisado, aguardando atendimento a notificacao":43,"Cancelado por decisao administrativa":7,"Aguardando analise, apos revisao ou atendimento da notificacao":4,"Cancelado por solicitacao do proprietario/possuidor":2,"Em analise":1,"Cancelado por duplicidade":1},"com_hidro":438,"com_rl":694,"com_uso":48,"com_veg":405,"sem_rl":636,"pct_rl":52.2,"pct_hidro":32.9},"Cardoso Moreira":{"n":790,"area":39305.23,"status":{"PE":34,"AT":753,"CA":3},"tipo":{"IRU":787,"AST":3},"condic":{"Aguardando analise":746,"Aguardando analise, apos revisao ou atendimento da notificacao":3,"Analisado, aguardando atendimento a notificacao":32,"Analisado, em conformidade com a Lei n 12.651/2012":5,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":1,"Cancelado por decisao administrativa":3},"com_hidro":129,"com_rl":308,"com_uso":45,"com_veg":109,"sem_rl":482,"pct_rl":39.0,"pct_hidro":16.3},"Carmo":{"n":604,"area":29318.52,"status":{"AT":595,"PE":6,"CA":3},"tipo":{"IRU":604},"condic":{"Aguardando analise":595,"Analisado, aguardando atendimento a notificacao":5,"Cancelado por duplicidade":1,"Em analise":1,"Cancelado por decisao administrativa":2},"com_hidro":206,"com_rl":280,"com_uso":134,"com_veg":174,"sem_rl":324,"pct_rl":46.4,"pct_hidro":34.1},"Casimiro de Abreu":{"n":372,"area":40833.66,"status":{"AT":310,"PE":50,"CA":12},"tipo":{"IRU":371,"AST":1},"condic":{"Aguardando analise":312,"Aguardando analise, apos revisao ou atendimento da notificacao":3,"Analisado, aguardando atendimento a notificacao":42,"Cancelado por solicitacao do proprietario/possuidor":2,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Em analise":2,"Cancelado por duplicidade":4,"Cancelado por decisao administrativa":6},"com_hidro":136,"com_rl":213,"com_uso":40,"com_veg":197,"sem_rl":159,"pct_rl":57.3,"pct_hidro":36.6},"Conceicao de Macabu":{"n":266,"area":28167.07,"status":{"AT":248,"PE":15,"CA":3},"tipo":{"IRU":262,"AST":4},"condic":{"Aguardando analise":242,"Analisado, aguardando atendimento a notificacao":17,"Em analise":2,"Analisado, em conformidade com a Lei n 12.651/2012":1,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":1,"Cancelado por decisao administrativa":3},"com_hidro":163,"com_rl":181,"com_uso":32,"com_veg":136,"sem_rl":85,"pct_rl":68.0,"pct_hidro":61.3},"Cordeiro":{"n":196,"area":8666.26,"status":{"AT":194,"CA":2},"tipo":{"IRU":196},"condic":{"Aguardando analise":193,"Cancelado por duplicidade":1,"Em analise":1,"Cancelado por decisao administrativa":1},"com_hidro":68,"com_rl":119,"com_uso":11,"com_veg":75,"sem_rl":77,"pct_rl":60.7,"pct_hidro":34.7},"Duas Barras":{"n":829,"area":32712.63,"status":{"AT":802,"PE":22,"CA":5},"tipo":{"IRU":829},"condic":{"Aguardando analise":798,"Analisado, aguardando atendimento a notificacao":11,"Em analise":6,"Aguardando analise, apos revisao ou atendimento da notificacao":7,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2,"Cancelado por solicitacao do proprietario/possuidor":4,"Cancelado por decisao administrativa":1},"com_hidro":244,"com_rl":453,"com_uso":60,"com_veg":342,"sem_rl":376,"pct_rl":54.6,"pct_hidro":29.4},"Duque de Caxias":{"n":218,"area":73806.08,"status":{"PE":19,"AT":189,"CA":10},"tipo":{"IRU":215,"AST":3},"condic":{"Aguardando analise":186,"Analisado, aguardando atendimento a notificacao":19,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Cancelado por decisao administrativa":3,"Analisado, em conformidade com a Lei n 12.651/2012":1,"Cancelado por duplicidade":1,"Cancelado por solicitacao do proprietario/possuidor":6},"com_hidro":35,"com_rl":85,"com_uso":11,"com_veg":74,"sem_rl":133,"pct_rl":39.0,"pct_hidro":16.1},"Engenheiro Paulo de Frontin":{"n":234,"area":9276.25,"status":{"AT":230,"PE":3,"CA":1},"tipo":{"IRU":234},"condic":{"Aguardando analise":226,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":1,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Analisado, aguardando atendimento a notificacao":2,"Em analise":2,"Cancelado por decisao administrativa":1},"com_hidro":63,"com_rl":147,"com_uso":13,"com_veg":131,"sem_rl":87,"pct_rl":62.8,"pct_hidro":26.9},"Guapimirim":{"n":203,"area":16203.14,"status":{"PE":23,"AT":178,"SU":1,"CA":1},"tipo":{"IRU":203},"condic":{"Analisado, aguardando atendimento a notificacao":26,"Em analise":15,"Aguardando analise":157,"Aguardando analise, apos revisao ou atendimento da notificacao":3,"Analisado, em regularizacao ambiental (Lei n 12.651/2012)":1,"Cancelado por duplicidade":1},"com_hidro":86,"com_rl":110,"com_uso":33,"com_veg":87,"sem_rl":93,"pct_rl":54.2,"pct_hidro":42.4},"Iguaba Grande":{"n":12,"area":587.98,"status":{"AT":8,"PE":4},"tipo":{"IRU":12},"condic":{"Aguardando analise":7,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Analisado, aguardando atendimento a notificacao":4},"com_hidro":3,"com_rl":5,"com_uso":0,"com_veg":1,"sem_rl":7,"pct_rl":41.7,"pct_hidro":25.0},"Itaborai":{"n":552,"area":18092.67,"status":{"AT":359,"PE":189,"CA":3,"SU":1},"tipo":{"IRU":552},"condic":{"Aguardando analise":341,"Em analise":6,"Aguardando analise, apos revisao ou atendimento da notificacao":7,"Analisado, aguardando atendimento a notificacao":192,"Analisado, em conformidade com a Lei n 12.651/2012":1,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2,"Cancelado por duplicidade":1,"Cancelado por decisao administrativa":2},"com_hidro":78,"com_rl":196,"com_uso":22,"com_veg":61,"sem_rl":356,"pct_rl":35.5,"pct_hidro":14.1},"Itaguai":{"n":310,"area":12674.65,"status":{"AT":207,"PE":94,"SU":2,"CA":7},"tipo":{"IRU":309,"AST":1},"condic":{"Aguardando analise":192,"Em analise":3,"Analisado, aguardando atendimento a notificacao":101,"Aguardando analise, apos revisao ou atendimento da notificacao":3,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":1,"Analisado, em conformidade com a Lei n 12.651/2012":3,"Cancelado por duplicidade":2,"Cancelado por decisao administrativa":5},"com_hidro":52,"com_rl":154,"com_uso":26,"com_veg":96,"sem_rl":156,"pct_rl":49.7,"pct_hidro":16.8},"Italva":{"n":742,"area":25360.42,"status":{"AT":702,"PE":37,"CA":3},"tipo":{"IRU":741,"AST":1},"condic":{"Aguardando analise":691,"Em analise":1,"Analisado, aguardando atendimento a notificacao":44,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Analisado, em conformidade com a Lei n 12.651/2012":2,"Cancelado por duplicidade":3},"com_hidro":107,"com_rl":260,"com_uso":34,"com_veg":86,"sem_rl":482,"pct_rl":35.0,"pct_hidro":14.4},"Itaocara":{"n":1487,"area":39283.3,"status":{"AT":1381,"PE":89,"CA":17},"tipo":{"IRU":1487},"condic":{"Aguardando analise":1377,"Analisado, aguardando atendimento a notificacao":88,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Cancelado por solicitacao do proprietario/possuidor":4,"Cancelado por duplicidade":4,"Analisado, em conformidade com a Lei n 12.651/2012":1,"Cancelado por decisao administrativa":9},"com_hidro":167,"com_rl":633,"com_uso":21,"com_veg":85,"sem_rl":854,"pct_rl":42.6,"pct_hidro":11.2},"Itaperuna":{"n":2321,"area":100800.69,"status":{"AT":2042,"SU":2,"PE":237,"CA":40},"tipo":{"IRU":2320,"AST":1},"condic":{"Aguardando analise":2002,"Em analise":5,"Aguardando analise, apos revisao ou atendimento da notificacao":18,"Analisado, aguardando atendimento a notificacao":231,"Cancelado por solicitacao do proprietario/possuidor":3,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":11,"Analisado, em conformidade com a Lei n 12.651/2012":12,"Cancelado por duplicidade":13,"Cancelado por decisao administrativa":24,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":2},"com_hidro":750,"com_rl":1077,"com_uso":443,"com_veg":382,"sem_rl":1244,"pct_rl":46.4,"pct_hidro":32.3},"Itatiaia":{"n":202,"area":11306.89,"status":{"AT":168,"PE":32,"CA":2},"tipo":{"IRU":202},"condic":{"Em analise":2,"Aguardando analise":168,"Analisado, aguardando atendimento a notificacao":30,"Cancelado por decisao administrativa":2},"com_hidro":80,"com_rl":107,"com_uso":4,"com_veg":78,"sem_rl":95,"pct_rl":53.0,"pct_hidro":39.6},"Japeri":{"n":104,"area":2883.07,"status":{"AT":81,"SU":1,"PE":22},"tipo":{"IRU":101,"AST":3},"condic":{"Aguardando analise":76,"Analisado, aguardando atendimento a notificacao":25,"Em analise":3},"com_hidro":10,"com_rl":52,"com_uso":4,"com_veg":7,"sem_rl":52,"pct_rl":50.0,"pct_hidro":9.6},"Laje do Muriae":{"n":409,"area":19603.02,"status":{"AT":364,"PE":38,"CA":7},"tipo":{"IRU":409},"condic":{"Aguardando analise":360,"Analisado, aguardando atendimento a notificacao":38,"Aguardando analise, apos revisao ou atendimento da notificacao":3,"Cancelado por solicitacao do proprietario/possuidor":1,"Cancelado por duplicidade":1,"Analisado, em conformidade com a Lei n 12.651/2012":1,"Cancelado por decisao administrativa":5},"com_hidro":125,"com_rl":238,"com_uso":25,"com_veg":102,"sem_rl":171,"pct_rl":58.2,"pct_hidro":30.6},"Macae":{"n":1040,"area":98162.93,"status":{"AT":914,"PE":110,"SU":7,"CA":9},"tipo":{"IRU":1038,"AST":2},"condic":{"Aguardando analise":884,"Analisado, aguardando atendimento a notificacao":114,"Em analise":6,"Aguardando analise, apos revisao ou atendimento da notificacao":12,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":7,"Cancelado por duplicidade":3,"Cancelado por solicitacao do proprietario/possuidor":1,"Cancelado por decisao administrativa":5,"Analisado, em conformidade com a Lei n 12.651/2012":7,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":1},"com_hidro":386,"com_rl":589,"com_uso":124,"com_veg":479,"sem_rl":451,"pct_rl":56.6,"pct_hidro":37.1},"Macuco":{"n":99,"area":6252.9,"status":{"AT":97,"PE":2},"tipo":{"IRU":99},"condic":{"Aguardando analise":97,"Analisado, aguardando atendimento a notificacao":2},"com_hidro":28,"com_rl":62,"com_uso":7,"com_veg":37,"sem_rl":37,"pct_rl":62.6,"pct_hidro":28.3},"Mage":{"n":307,"area":14633.78,"status":{"AT":220,"PE":83,"CA":4},"tipo":{"IRU":303,"AST":4},"condic":{"Em analise":12,"Aguardando analise":184,"Analisado, em conformidade com a Lei n 12.651/2012":16,"Analisado, aguardando atendimento a notificacao":79,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":1,"Cancelado por decisao administrativa":3,"Aguardando analise, apos revisao ou atendimento da notificacao":4,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":7,"Cancelado por duplicidade":1},"com_hidro":104,"com_rl":131,"com_uso":30,"com_veg":97,"sem_rl":176,"pct_rl":42.7,"pct_hidro":33.9},"Mangaratiba":{"n":219,"area":25056.44,"status":{"AT":198,"PE":21},"tipo":{"IRU":217,"AST":1,"PCT":1},"condic":{"Analisado, aguardando atendimento a notificacao":25,"Aguardando analise":189,"Em analise":3,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Analisado, em conformidade com a Lei n 12.651/2012":1},"com_hidro":54,"com_rl":115,"com_uso":44,"com_veg":125,"sem_rl":104,"pct_rl":52.5,"pct_hidro":24.7},"Marica":{"n":252,"area":12271.58,"status":{"AT":222,"PE":26,"SU":1,"CA":3},"tipo":{"IRU":252},"condic":{"Aguardando analise":200,"Analisado, aguardando atendimento a notificacao":34,"Em analise":10,"Cancelado por solicitacao do proprietario/possuidor":2,"Aguardando analise, apos revisao ou atendimento da notificacao":5,"Cancelado por duplicidade":1},"com_hidro":47,"com_rl":119,"com_uso":16,"com_veg":75,"sem_rl":133,"pct_rl":47.2,"pct_hidro":18.7},"Mendes":{"n":104,"area":3393.73,"status":{"AT":101,"CA":2,"SU":1},"tipo":{"IRU":104},"condic":{"Aguardando analise":100,"Cancelado por solicitacao do proprietario/possuidor":2,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Em analise":1},"com_hidro":34,"com_rl":49,"com_uso":2,"com_veg":36,"sem_rl":55,"pct_rl":47.1,"pct_hidro":32.7},"Mesquita":{"n":7,"area":26.05,"status":{"AT":7},"tipo":{"IRU":7},"condic":{"Aguardando analise":7},"com_hidro":0,"com_rl":1,"com_uso":0,"com_veg":0,"sem_rl":6,"pct_rl":14.3,"pct_hidro":0.0},"Miguel Pereira":{"n":254,"area":19524.64,"status":{"AT":249,"PE":4,"CA":1},"tipo":{"IRU":253,"AST":1},"condic":{"Aguardando analise":243,"Aguardando analise, apos revisao ou atendimento da notificacao":3,"Em analise":2,"Analisado, aguardando atendimento a notificacao":5,"Cancelado por decisao administrativa":1},"com_hidro":95,"com_rl":170,"com_uso":38,"com_veg":147,"sem_rl":84,"pct_rl":66.9,"pct_hidro":37.4},"Miracema":{"n":607,"area":30939.49,"status":{"AT":539,"PE":46,"CA":22},"tipo":{"IRU":607},"condic":{"Aguardando analise":523,"Analisado, aguardando atendimento a notificacao":39,"Cancelado por solicitacao do proprietario/possuidor":7,"Aguardando analise, apos revisao ou atendimento da notificacao":8,"Analisado, em conformidade com a Lei n 12.651/2012":5,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":8,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":2,"Cancelado por duplicidade":3,"Cancelado por decisao administrativa":12},"com_hidro":174,"com_rl":306,"com_uso":29,"com_veg":188,"sem_rl":301,"pct_rl":50.4,"pct_hidro":28.7},"Natividade":{"n":725,"area":34944.22,"status":{"AT":658,"SU":1,"PE":54,"CA":12},"tipo":{"IRU":725},"condic":{"Aguardando analise":653,"Analisado, aguardando atendimento a notificacao":49,"Aguardando analise, apos revisao ou atendimento da notificacao":5,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":3,"Cancelado por duplicidade":2,"Cancelado por solicitacao do proprietario/possuidor":1,"Analisado, em conformidade com a Lei n 12.651/2012":3,"Cancelado por decisao administrativa":9},"com_hidro":268,"com_rl":438,"com_uso":128,"com_veg":207,"sem_rl":287,"pct_rl":60.4,"pct_hidro":37.0},"Niteroi":{"n":34,"area":572.03,"status":{"AT":33,"PE":1},"tipo":{"IRU":34},"condic":{"Aguardando analise":32,"Analisado, aguardando atendimento a notificacao":2},"com_hidro":1,"com_rl":17,"com_uso":2,"com_veg":9,"sem_rl":17,"pct_rl":50.0,"pct_hidro":2.9},"Nova Friburgo":{"n":2895,"area":69928.41,"status":{"PE":43,"AT":2838,"CA":14},"tipo":{"IRU":2895},"condic":{"Analisado, aguardando atendimento a notificacao":38,"Aguardando analise":2832,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":1,"Analisado, em regularizacao ambiental (Lei n 12.651/2012), com ativos ambientais":1,"Aguardando analise, apos revisao ou atendimento da notificacao":4,"Em analise":3,"Cancelado por decisao administrativa":4,"Analisado, em conformidade com a Lei n 12.651/2012":1,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Cancelado por duplicidade":8,"Cancelado por solicitacao do proprietario/possuidor":2},"com_hidro":827,"com_rl":1356,"com_uso":623,"com_veg":1260,"sem_rl":1539,"pct_rl":46.8,"pct_hidro":28.6},"Nova Iguacu":{"n":277,"area":5868.6,"status":{"AT":217,"PE":59,"CA":1},"tipo":{"IRU":275,"AST":2},"condic":{"Aguardando analise":210,"Analisado, aguardando atendimento a notificacao":60,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":3,"Em analise":3,"Cancelado por duplicidade":1},"com_hidro":42,"com_rl":103,"com_uso":6,"com_veg":69,"sem_rl":174,"pct_rl":37.2,"pct_hidro":15.2},"Paracambi":{"n":222,"area":8547.1,"status":{"PE":10,"AT":211,"CA":1},"tipo":{"IRU":220,"AST":2},"condic":{"Analisado, aguardando atendimento a notificacao":13,"Aguardando analise":204,"Em analise":3,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Cancelado por decisao administrativa":1},"com_hidro":77,"com_rl":123,"com_uso":31,"com_veg":94,"sem_rl":99,"pct_rl":55.4,"pct_hidro":34.7},"Paraiba do Sul":{"n":777,"area":51159.08,"status":{"PE":29,"AT":746,"CA":2},"tipo":{"IRU":777},"condic":{"Analisado, aguardando atendimento a notificacao":30,"Aguardando analise":734,"Em analise":7,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Analisado, em conformidade com a Lei n 12.651/2012":1,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Cancelado por duplicidade":2},"com_hidro":300,"com_rl":509,"com_uso":117,"com_veg":284,"sem_rl":268,"pct_rl":65.5,"pct_hidro":38.6},"Paraty":{"n":797,"area":85973.69,"status":{"AT":727,"PE":58,"SU":3,"CA":9},"tipo":{"IRU":792,"AST":2,"PCT":3},"condic":{"Aguardando analise":747,"Analisado, em conformidade com a Lei n 12.651/2012":1,"Em analise":5,"Analisado, aguardando atendimento a notificacao":35,"Cancelado por solicitacao do proprietario/possuidor":1,"Cancelado por duplicidade":2,"Cancelado por decisao administrativa":6},"com_hidro":239,"com_rl":434,"com_uso":161,"com_veg":451,"sem_rl":363,"pct_rl":54.5,"pct_hidro":30.0},"Paty do Alferes":{"n":551,"area":154921.84,"status":{"AT":524,"PE":17,"CA":10},"tipo":{"IRU":551},"condic":{"Aguardando analise":513,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Analisado, aguardando atendimento a notificacao":17,"Em analise":9,"Cancelado por solicitacao do proprietario/possuidor":4,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Cancelado por duplicidade":1,"Cancelado por decisao administrativa":5},"com_hidro":205,"com_rl":290,"com_uso":41,"com_veg":161,"sem_rl":261,"pct_rl":52.6,"pct_hidro":37.2},"Petropolis":{"n":939,"area":31494.27,"status":{"AT":857,"PE":36,"CA":45,"SU":1},"tipo":{"IRU":939},"condic":{"Aguardando analise":809,"Em analise":6,"Cancelado por solicitacao do proprietario/possuidor":2,"Aguardando analise, apos revisao ou atendimento da notificacao":31,"Analisado, aguardando atendimento a notificacao":46,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2,"Cancelado por decisao administrativa":33,"Cancelado por duplicidade":10},"com_hidro":330,"com_rl":433,"com_uso":203,"com_veg":374,"sem_rl":506,"pct_rl":46.1,"pct_hidro":35.1},"Pinheiral":{"n":140,"area":5914.96,"status":{"AT":134,"PE":6},"tipo":{"IRU":140},"condic":{"Aguardando analise":131,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Analisado, aguardando atendimento a notificacao":7},"com_hidro":29,"com_rl":59,"com_uso":2,"com_veg":29,"sem_rl":81,"pct_rl":42.1,"pct_hidro":20.7},"Pirai":{"n":518,"area":39101.68,"status":{"AT":496,"PE":16,"CA":6},"tipo":{"IRU":515,"AST":3},"condic":{"Aguardando analise":488,"Em analise":5,"Analisado, aguardando atendimento a notificacao":17,"Cancelado por decisao administrativa":4,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":1,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Cancelado por duplicidade":2},"com_hidro":187,"com_rl":343,"com_uso":34,"com_veg":248,"sem_rl":175,"pct_rl":66.2,"pct_hidro":36.1},"Porciuncula":{"n":954,"area":26181.55,"status":{"AT":884,"PE":59,"SU":1,"CA":10},"tipo":{"IRU":954},"condic":{"Aguardando analise":874,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Analisado, aguardando atendimento a notificacao":59,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":3,"Analisado, em conformidade com a Lei n 12.651/2012":5,"Em analise":1,"Cancelado por decisao administrativa":5,"Cancelado por duplicidade":5},"com_hidro":296,"com_rl":392,"com_uso":93,"com_veg":189,"sem_rl":562,"pct_rl":41.1,"pct_hidro":31.0},"Porto Real":{"n":66,"area":3527.46,"status":{"AT":44,"PE":22},"tipo":{"IRU":66},"condic":{"Aguardando analise":36,"Analisado, aguardando atendimento a notificacao":26,"Em analise":1,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2,"Aguardando analise, apos revisao ou atendimento da notificacao":1},"com_hidro":22,"com_rl":28,"com_uso":1,"com_veg":7,"sem_rl":38,"pct_rl":42.4,"pct_hidro":33.3},"Quatis":{"n":334,"area":25246.99,"status":{"AT":319,"SU":5,"PE":10},"tipo":{"IRU":332,"PCT":1,"AST":1},"condic":{"Aguardando analise":310,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2,"Analisado, aguardando atendimento a notificacao":19,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":1,"Em analise":1},"com_hidro":206,"com_rl":242,"com_uso":3,"com_veg":152,"sem_rl":92,"pct_rl":72.5,"pct_hidro":61.7},"Queimados":{"n":73,"area":1343.52,"status":{"AT":54,"PE":19},"tipo":{"IRU":73},"condic":{"Aguardando analise":50,"Aguardando analise, apos revisao ou atendimento da notificacao":3,"Analisado, aguardando atendimento a notificacao":18,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2},"com_hidro":7,"com_rl":17,"com_uso":1,"com_veg":2,"sem_rl":56,"pct_rl":23.3,"pct_hidro":9.6},"Quissama":{"n":507,"area":35064.95,"status":{"AT":303,"PE":197,"SU":1,"CA":6},"tipo":{"IRU":507},"condic":{"Aguardando analise":262,"Analisado, aguardando atendimento a notificacao":208,"Em analise":1,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":2,"Analisado, em conformidade com a Lei n 12.651/2012":7,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":11,"Aguardando analise, apos revisao ou atendimento da notificacao":10,"Cancelado por duplicidade":2,"Cancelado por solicitacao do proprietario/possuidor":1,"Cancelado por decisao administrativa":3},"com_hidro":101,"com_rl":227,"com_uso":5,"com_veg":63,"sem_rl":280,"pct_rl":44.8,"pct_hidro":19.9},"Resende":{"n":954,"area":119298.67,"status":{"AT":901,"PE":46,"CA":7},"tipo":{"IRU":954},"condic":{"Aguardando analise":881,"Em analise":12,"Analisado, aguardando atendimento a notificacao":48,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":3,"Aguardando analise, apos revisao ou atendimento da notificacao":3,"Cancelado por solicitacao do proprietario/possuidor":2,"Cancelado por duplicidade":2,"Cancelado por decisao administrativa":3},"com_hidro":647,"com_rl":698,"com_uso":42,"com_veg":545,"sem_rl":256,"pct_rl":73.2,"pct_hidro":67.8},"Rio Bonito":{"n":799,"area":33860.61,"status":{"AT":721,"PE":70,"CA":8},"tipo":{"IRU":799},"condic":{"Aguardando analise":678,"Em analise":31,"Analisado, aguardando atendimento a notificacao":78,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Cancelado por solicitacao do proprietario/possuidor":3,"Cancelado por duplicidade":2,"Cancelado por decisao administrativa":3},"com_hidro":144,"com_rl":407,"com_uso":27,"com_veg":176,"sem_rl":392,"pct_rl":50.9,"pct_hidro":18.0},"Rio Claro":{"n":678,"area":107675.57,"status":{"AT":644,"PE":12,"SU":2,"CA":20},"tipo":{"IRU":678},"condic":{"Aguardando analise":636,"Analisado, aguardando atendimento a notificacao":14,"Em analise":2,"Aguardando analise, apos revisao ou atendimento da notificacao":4,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2,"Cancelado por decisao administrativa":17,"Cancelado por solicitacao do proprietario/possuidor":1,"Cancelado por duplicidade":2},"com_hidro":402,"com_rl":489,"com_uso":41,"com_veg":421,"sem_rl":189,"pct_rl":72.1,"pct_hidro":59.3},"Rio das Flores":{"n":302,"area":35035.13,"status":{"AT":299,"PE":3},"tipo":{"IRU":302},"condic":{"Aguardando analise":295,"Analisado, aguardando atendimento a notificacao":5,"Em analise":2},"com_hidro":200,"com_rl":243,"com_uso":17,"com_veg":133,"sem_rl":59,"pct_rl":80.5,"pct_hidro":66.2},"Rio das Ostras":{"n":88,"area":14995.79,"status":{"PE":14,"AT":72,"CA":2},"tipo":{"IRU":87,"AST":1},"condic":{"Em analise":5,"Aguardando analise":67,"Analisado, aguardando atendimento a notificacao":13,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Cancelado por decisao administrativa":2},"com_hidro":29,"com_rl":46,"com_uso":1,"com_veg":39,"sem_rl":42,"pct_rl":52.3,"pct_hidro":33.0},"Rio de Janeiro":{"n":331,"area":30868.44,"status":{"AT":234,"PE":91,"CA":6},"tipo":{"IRU":331},"condic":{"Analisado, aguardando atendimento a notificacao":90,"Aguardando analise":226,"Analisado, em conformidade com a Lei n 12.651/2012":2,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":4,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Em analise":1,"Cancelado por decisao administrativa":6},"com_hidro":21,"com_rl":98,"com_uso":29,"com_veg":63,"sem_rl":233,"pct_rl":29.6,"pct_hidro":6.3},"Santa Maria Madalena":{"n":833,"area":75812.72,"status":{"AT":774,"PE":49,"CA":10},"tipo":{"IRU":833},"condic":{"Aguardando analise":798,"Analisado, aguardando atendimento a notificacao":17,"Analisado, em conformidade com a Lei n 12.651/2012":5,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Cancelado por solicitacao do proprietario/possuidor":1,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Cancelado por duplicidade":2,"Cancelado por decisao administrativa":7,"Em analise":1},"com_hidro":369,"com_rl":562,"com_uso":290,"com_veg":449,"sem_rl":271,"pct_rl":67.5,"pct_hidro":44.3},"Santo Antonio de Padua":{"n":1653,"area":216356.78,"status":{"PE":94,"AT":1523,"CA":36},"tipo":{"IRU":1653},"condic":{"Analisado, aguardando atendimento a notificacao":80,"Aguardando analise, apos revisao ou atendimento da notificacao":12,"Cancelado por decisao administrativa":26,"Aguardando analise":1498,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":6,"Analisado, em conformidade com a Lei n 12.651/2012":19,"Cancelado por duplicidade":8,"Cancelado por solicitacao do proprietario/possuidor":2,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":2},"com_hidro":344,"com_rl":645,"com_uso":90,"com_veg":249,"sem_rl":1008,"pct_rl":39.0,"pct_hidro":20.8},"Sao Francisco de Itabapoana":{"n":1959,"area":105173.68,"status":{"AT":1884,"PE":62,"CA":13},"tipo":{"IRU":1958,"AST":1},"condic":{"Aguardando analise":1870,"Aguardando analise, apos revisao ou atendimento da notificacao":3,"Analisado, em regularizacao ambiental (Lei n 12.651/2012)":1,"Analisado, aguardando atendimento a notificacao":61,"Em analise":3,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":4,"Cancelado por decisao administrativa":9,"Cancelado por duplicidade":3,"Cancelado por solicitacao do proprietario/possuidor":1,"Analisado, em conformidade com a Lei n 12.651/2012":4},"com_hidro":396,"com_rl":565,"com_uso":24,"com_veg":142,"sem_rl":1394,"pct_rl":28.8,"pct_hidro":20.2},"Sao Fidelis":{"n":2262,"area":93927.65,"status":{"PE":118,"AT":2113,"SU":6,"CA":25},"tipo":{"IRU":2261,"AST":1},"condic":{"Aguardando analise, apos revisao ou atendimento da notificacao":14,"Analisado, aguardando atendimento a notificacao":152,"Aguardando analise":2055,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":5,"Analisado, em conformidade com a Lei n 12.651/2012":6,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":5,"Cancelado por duplicidade":2,"Cancelado por decisao administrativa":23},"com_hidro":402,"com_rl":1075,"com_uso":410,"com_veg":416,"sem_rl":1187,"pct_rl":47.5,"pct_hidro":17.8},"Sao Goncalo":{"n":56,"area":3510.34,"status":{"PE":12,"AT":44},"tipo":{"IRU":55,"AST":1},"condic":{"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Analisado, aguardando atendimento a notificacao":18,"Aguardando analise":35,"Analisado, em conformidade com a Lei n 12.651/2012":1},"com_hidro":12,"com_rl":27,"com_uso":3,"com_veg":13,"sem_rl":29,"pct_rl":48.2,"pct_hidro":21.4},"Sao Joao da Barra":{"n":707,"area":35415.93,"status":{"AT":316,"PE":376,"CA":14,"SU":1},"tipo":{"IRU":707},"condic":{"Aguardando analise":232,"Analisado, aguardando atendimento a notificacao":395,"Aguardando analise, apos revisao ou atendimento da notificacao":6,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":4,"Em analise":4,"Cancelado por solicitacao do proprietario/possuidor":2,"Analisado, em conformidade com a Lei n 12.651/2012":43,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":9,"Cancelado por decisao administrativa":12},"com_hidro":42,"com_rl":122,"com_uso":0,"com_veg":54,"sem_rl":585,"pct_rl":17.3,"pct_hidro":5.9},"Sao Jose de Uba":{"n":639,"area":24448.94,"status":{"PE":28,"AT":598,"CA":13},"tipo":{"IRU":639},"condic":{"Aguardando analise":594,"Cancelado por solicitacao do proprietario/possuidor":2,"Aguardando analise, apos revisao ou atendimento da notificacao":4,"Cancelado por decisao administrativa":7,"Analisado, aguardando atendimento a notificacao":24,"Em analise":3,"Cancelado por duplicidade":4,"Analisado, em conformidade com a Lei n 12.651/2012":1},"com_hidro":172,"com_rl":340,"com_uso":66,"com_veg":112,"sem_rl":299,"pct_rl":53.2,"pct_hidro":26.9},"Sao Jose do Vale do Rio Preto":{"n":519,"area":18469.87,"status":{"PE":14,"AT":501,"SU":1,"CA":3},"tipo":{"IRU":519},"condic":{"Aguardando analise":506,"Analisado, aguardando atendimento a notificacao":7,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Em analise":2,"Cancelado por decisao administrativa":2,"Cancelado por duplicidade":1},"com_hidro":100,"com_rl":246,"com_uso":116,"com_veg":167,"sem_rl":273,"pct_rl":47.4,"pct_hidro":19.3},"Sao Pedro da Aldeia":{"n":244,"area":17959.74,"status":{"AT":143,"PE":81,"CA":17,"SU":3},"tipo":{"IRU":243,"AST":1},"condic":{"Em analise":10,"Analisado, aguardando atendimento a notificacao":84,"Aguardando analise":132,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Cancelado por solicitacao do proprietario/possuidor":7,"Cancelado por duplicidade":2,"Cancelado por decisao administrativa":8},"com_hidro":47,"com_rl":100,"com_uso":1,"com_veg":46,"sem_rl":144,"pct_rl":41.0,"pct_hidro":19.3},"Sao Sebastiao do Alto":{"n":1042,"area":37148.35,"status":{"AT":1014,"CA":5,"PE":23},"tipo":{"IRU":1042},"condic":{"Aguardando analise":1013,"Cancelado por solicitacao do proprietario/possuidor":2,"Analisado, aguardando atendimento a notificacao":23,"Em analise":1,"Cancelado por decisao administrativa":3},"com_hidro":184,"com_rl":522,"com_uso":36,"com_veg":192,"sem_rl":520,"pct_rl":50.1,"pct_hidro":17.7},"Sapucaia":{"n":893,"area":45042.11,"status":{"PE":8,"AT":880,"CA":4,"SU":1},"tipo":{"IRU":893},"condic":{"Aguardando analise":880,"Cancelado por solicitacao do proprietario/possuidor":1,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Analisado, aguardando atendimento a notificacao":6,"Cancelado por duplicidade":2,"Cancelado por decisao administrativa":1,"Em analise":1},"com_hidro":370,"com_rl":573,"com_uso":336,"com_veg":400,"sem_rl":320,"pct_rl":64.2,"pct_hidro":41.4},"Saquarema":{"n":314,"area":12287.46,"status":{"AT":218,"PE":87,"SU":1,"CA":8},"tipo":{"IRU":314},"condic":{"Aguardando analise":211,"Aguardando analise, apos revisao ou atendimento da notificacao":5,"Em analise":4,"Analisado, aguardando atendimento a notificacao":86,"Cancelado por solicitacao do proprietario/possuidor":4,"Cancelado por duplicidade":2,"Cancelado por decisao administrativa":2},"com_hidro":40,"com_rl":131,"com_uso":7,"com_veg":60,"sem_rl":183,"pct_rl":41.7,"pct_hidro":12.7},"Seropedica":{"n":448,"area":14167.06,"status":{"AT":241,"PE":198,"CA":7,"SU":2},"tipo":{"IRU":448},"condic":{"Analisado, aguardando atendimento a notificacao":201,"Aguardando analise, apos revisao ou atendimento da notificacao":19,"Aguardando analise":202,"Em analise":2,"Cancelado por decisao administrativa":6,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":8,"Cancelado por solicitacao do proprietario/possuidor":1,"Analisado, em conformidade com a Lei n 12.651/2012":9},"com_hidro":41,"com_rl":145,"com_uso":6,"com_veg":41,"sem_rl":303,"pct_rl":32.4,"pct_hidro":9.2},"Silva Jardim":{"n":745,"area":83571.79,"status":{"AT":649,"PE":75,"CA":19,"SU":2},"tipo":{"IRU":742,"AST":3},"condic":{"Em analise":10,"Aguardando analise":623,"Analisado, em regularizacao ambiental (Lei n 12.651/2012), com ativos ambientais":1,"Aguardando analise, apos revisao ou atendimento da notificacao":9,"Analisado, aguardando atendimento a notificacao":80,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":1,"Cancelado por duplicidade":8,"Cancelado por decisao administrativa":8,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Cancelado por solicitacao do proprietario/possuidor":4},"com_hidro":278,"com_rl":497,"com_uso":70,"com_veg":354,"sem_rl":248,"pct_rl":66.7,"pct_hidro":37.3},"Sumidouro":{"n":1693,"area":36381.55,"status":{"AT":1658,"PE":26,"CA":9},"tipo":{"IRU":1693},"condic":{"Aguardando analise":1660,"Analisado, em regularizacao ambiental (Lei n 12.651/2012), com ativos ambientais":1,"Cancelado por solicitacao do proprietario/possuidor":4,"Analisado, aguardando atendimento a notificacao":23,"Cancelado por duplicidade":5},"com_hidro":213,"com_rl":559,"com_uso":68,"com_veg":322,"sem_rl":1134,"pct_rl":33.0,"pct_hidro":12.6},"Tangua":{"n":418,"area":10689.79,"status":{"AT":331,"PE":86,"CA":1},"tipo":{"IRU":418},"condic":{"Aguardando analise":325,"Analisado, aguardando atendimento a notificacao":85,"Em analise":3,"Aguardando analise, apos revisao ou atendimento da notificacao":4,"Cancelado por decisao administrativa":1},"com_hidro":56,"com_rl":178,"com_uso":16,"com_veg":48,"sem_rl":240,"pct_rl":42.6,"pct_hidro":13.4},"Teresopolis":{"n":1188,"area":114641.63,"status":{"AT":1125,"PE":29,"SU":6,"CA":28},"tipo":{"IRU":1186,"AST":2},"condic":{"Aguardando analise":1119,"Analisado, aguardando atendimento a notificacao":30,"Em analise":3,"Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais":3,"Analisado, em conformidade com a Lei n 12.651/2012":1,"Aguardando analise, apos revisao ou atendimento da notificacao":2,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":2,"Cancelado por decisao administrativa":9,"Cancelado por duplicidade":17,"Cancelado por solicitacao do proprietario/possuidor":2},"com_hidro":250,"com_rl":654,"com_uso":109,"com_veg":491,"sem_rl":534,"pct_rl":55.1,"pct_hidro":21.0},"Trajano de Moraes":{"n":729,"area":45896.2,"status":{"AT":716,"PE":9,"CA":3,"SU":1},"tipo":{"IRU":728,"AST":1},"condic":{"Aguardando analise":719,"Cancelado por solicitacao do proprietario/possuidor":1,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Analisado, aguardando atendimento a notificacao":5,"Cancelado por duplicidade":2,"Aguardando analise, apos revisao ou atendimento da notificacao":1},"com_hidro":222,"com_rl":486,"com_uso":48,"com_veg":366,"sem_rl":243,"pct_rl":66.7,"pct_hidro":30.5},"Tres Rios":{"n":266,"area":23803.85,"status":{"AT":254,"PE":12},"tipo":{"IRU":266},"condic":{"Aguardando analise":256,"Analisado, aguardando atendimento a notificacao":8,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1,"Em analise":1},"com_hidro":105,"com_rl":165,"com_uso":17,"com_veg":96,"sem_rl":101,"pct_rl":62.0,"pct_hidro":39.5},"Valenca":{"n":1507,"area":113271.18,"status":{"PE":30,"AT":1463,"CA":12,"SU":2},"tipo":{"IRU":1505,"PCT":1,"AST":1},"condic":{"Aguardando analise":1446,"Analisado, aguardando atendimento a notificacao":33,"Aguardando analise, apos revisao ou atendimento da notificacao":9,"Cancelado por solicitacao do proprietario/possuidor":4,"Cancelado por duplicidade":4,"Em analise":7,"Cancelado por decisao administrativa":4},"com_hidro":861,"com_rl":1154,"com_uso":43,"com_veg":711,"sem_rl":353,"pct_rl":76.6,"pct_hidro":57.1},"Varre-Sai":{"n":742,"area":17299.01,"status":{"AT":701,"SU":1,"PE":33,"CA":7},"tipo":{"IRU":742},"condic":{"Aguardando analise":690,"Analisado, aguardando atendimento a notificacao":36,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":5,"Analisado, em conformidade com a Lei n 12.651/2012":2,"Aguardando analise, apos revisao ou atendimento da notificacao":1,"Cancelado por solicitacao do proprietario/possuidor":3,"Cancelado por decisao administrativa":4,"Em analise":1},"com_hidro":226,"com_rl":314,"com_uso":42,"com_veg":169,"sem_rl":428,"pct_rl":42.3,"pct_hidro":30.5},"Vassouras":{"n":475,"area":44133.8,"status":{"AT":452,"PE":19,"CA":4},"tipo":{"IRU":475},"condic":{"Aguardando analise":441,"Analisado, aguardando atendimento a notificacao":19,"Aguardando analise, apos revisao ou atendimento da notificacao":5,"Cancelado por solicitacao do proprietario/possuidor":1,"Em analise":5,"Cancelado por duplicidade":3,"Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)":1},"com_hidro":217,"com_rl":306,"com_uso":20,"com_veg":201,"sem_rl":169,"pct_rl":64.4,"pct_hidro":45.7},"Volta Redonda":{"n":181,"area":8067.01,"status":{"AT":173,"PE":8},"tipo":{"IRU":181},"condic":{"Aguardando analise":171,"Em analise":3,"Analisado, aguardando atendimento a notificacao":7},"com_hidro":71,"com_rl":104,"com_uso":3,"com_veg":53,"sem_rl":77,"pct_rl":57.5,"pct_hidro":39.2}};
+const MANIFEST = {"Angra dos Reis":{"area_imovel":277},"Aperibe":{"area_imovel":343},"Araruama":{"area_imovel":606},"Areal":{"area_imovel":184},"Armacao dos Buzios":{"area_imovel":28},"Arraial do Cabo":{"area_imovel":4},"Barra do Pirai":{"area_imovel":579},"Barra Mansa":{"area_imovel":495},"Belford Roxo":{"area_imovel":12},"Bom Jardim":{"area_imovel":1339},"Bom Jesus do Itabapoana":{"area_imovel":1434},"Cabo Frio":{"area_imovel":207},"Cachoeiras de Macacu":{"area_imovel":1504},"Cambuci":{"area_imovel":1214},"Carapebus":{"area_imovel":261},"Comendador Levy Gasparian":{"area_imovel":75},"Campos dos Goytacazes":{"area_imovel":5207},"Cantagalo":{"area_imovel":1330},"Cardoso Moreira":{"area_imovel":790},"Carmo":{"area_imovel":604},"Casimiro de Abreu":{"area_imovel":372},"Conceicao de Macabu":{"area_imovel":266},"Cordeiro":{"area_imovel":196},"Duas Barras":{"area_imovel":829},"Duque de Caxias":{"area_imovel":218},"Engenheiro Paulo de Frontin":{"area_imovel":234},"Guapimirim":{"area_imovel":203},"Iguaba Grande":{"area_imovel":12},"Itaborai":{"area_imovel":552},"Itaguai":{"area_imovel":310},"Italva":{"area_imovel":742},"Itaocara":{"area_imovel":1487},"Itaperuna":{"area_imovel":2321},"Itatiaia":{"area_imovel":202},"Japeri":{"area_imovel":104},"Laje do Muriae":{"area_imovel":409},"Macae":{"area_imovel":1040},"Macuco":{"area_imovel":99},"Mage":{"area_imovel":307},"Mangaratiba":{"area_imovel":219},"Marica":{"area_imovel":252},"Mendes":{"area_imovel":104},"Mesquita":{"area_imovel":7},"Miguel Pereira":{"area_imovel":254},"Miracema":{"area_imovel":607},"Natividade":{"area_imovel":725},"Niteroi":{"area_imovel":34},"Nova Friburgo":{"area_imovel":2895},"Nova Iguacu":{"area_imovel":277},"Paracambi":{"area_imovel":222},"Paraiba do Sul":{"area_imovel":777},"Paraty":{"area_imovel":797},"Paty do Alferes":{"area_imovel":551},"Petropolis":{"area_imovel":939},"Pinheiral":{"area_imovel":140},"Pirai":{"area_imovel":518},"Porciuncula":{"area_imovel":954},"Porto Real":{"area_imovel":66},"Quatis":{"area_imovel":334},"Queimados":{"area_imovel":73},"Quissama":{"area_imovel":507},"Resende":{"area_imovel":954},"Rio Bonito":{"area_imovel":799},"Rio Claro":{"area_imovel":678},"Rio das Flores":{"area_imovel":302},"Rio das Ostras":{"area_imovel":88},"Rio de Janeiro":{"area_imovel":331},"Santa Maria Madalena":{"area_imovel":833},"Santo Antonio de Padua":{"area_imovel":1653},"Sao Francisco de Itabapoana":{"area_imovel":1959},"Sao Fidelis":{"area_imovel":2262},"Sao Goncalo":{"area_imovel":56},"Sao Joao da Barra":{"area_imovel":707},"Sao Jose de Uba":{"area_imovel":639},"Sao Jose do Vale do Rio Preto":{"area_imovel":519},"Sao Pedro da Aldeia":{"area_imovel":244},"Sao Sebastiao do Alto":{"area_imovel":1042},"Sapucaia":{"area_imovel":893},"Saquarema":{"area_imovel":314},"Seropedica":{"area_imovel":448},"Silva Jardim":{"area_imovel":745},"Sumidouro":{"area_imovel":1693},"Tangua":{"area_imovel":418},"Teresopolis":{"area_imovel":1188},"Trajano de Moraes":{"area_imovel":729},"Tres Rios":{"area_imovel":266},"Valenca":{"area_imovel":1507},"Varre-Sai":{"area_imovel":742},"Vassouras":{"area_imovel":475},"Volta Redonda":{"area_imovel":181},"__all__":{"area_consolidada":38149,"reserva_legal":29529,"hidrografia":19306,"vegetacao_nativa":17315,"servidao_administrativa":13882,"uso_restrito":5913}};
+const CONDIC_COLORS = {"Aguardando analise": "#60a5fa", "Em analise": "#a78bfa", "Analisado, aguardando atendimento a notificacao": "#fbbf24", "Analisado, aguardando regularizacao ambiental (Lei n 12.651/2012)": "#fb923c", "Analisado, em conformidade com a Lei n 12.651/2012": "#4ade80", "Analisado, em conformidade com a Lei n 12.651/2012, com ativos ambientais": "#34d399", "Analisado, em regularizacao ambiental (Lei n 12.651/2012), com ativos ambientais": "#86efac", "Aguardando analise, apos revisao ou atendimento da notificacao": "#93c5fd", "Cancelado por decisao administrativa": "#f87171", "Cancelado por duplicidade": "#fb7185", "Cancelado por solicitacao do proprietario/possuidor": "#fda4af", "Cancelado por decisao judicial": "#e11d48"};
+
+const STATUS_L = {AT:'Ativo',PE:'Pendente',CA:'Cancelado',SU:'Suspenso'};
+const STATUS_C = {AT:'b-at',PE:'b-pe',CA:'b-ca',SU:'b-su'};
+const TIPO_L   = {IRU:'Imóvel Rural',AST:'Assentamento',PCT:'Povo/Comunidade'};
+const TEMA_L   = {
+  ARL_PROPOSTA:'RL Proposta',ARL_APROVADA_NAO_AVERBADA:'RL Aprovada',ARL_AVERBADA:'RL Averbada',
+  RIO_ATE_10:'Rio ≤10m',RIO_10_A_50:'Rio 10–50m',RIO_50_A_200:'Rio 50–200m',
+  RIO_200_A_600:'Rio 200–600m',RIO_ACIMA_600:'Rio >600m',LAGO_NATURAL:'Lago Natural',
+  RESERVATORIO_ARTIFICIAL_DECORRENTE_BARRAMENTO:'Reservatório',
+  AREA_USO_RESTRITO_DECLIVIDADE_25_A_45:'Declividade 25–45°',AREA_USO_RESTRITO_PANTANEIRA:'Pantanal',
+  AREA_SERVIDAO_ADMINISTRATIVA_TOTAL:'Servidão Total',AREA_UTILIDADE_PUBLICA:'Utilidade Pública',
+  AREA_INFRAESTRUTURA_PUBLICA:'Infraestrutura',RESERVATORIO_ENERGIA:'Reservatório Energia',
+};
+const AREA_BINS   = [0,5,10,20,50,100,200,500,1000,Infinity];
+const AREA_LABELS = ['0–5','5–10','10–20','20–50','50–100','100–200','200–500','500–1k','>1k'];
+
+// STATUS colors for classification
+const STATUS_COLORS = {AT:'#22d3a0',PE:'#fb923c',CA:'#f87171',SU:'#a78bfa'};
+// AREA class colors (green gradient)
+const AREA_COLORS = ['#ecfdf5','#a7f3d0','#6ee7b7','#34d399','#10b981','#059669','#047857','#065f46','#022c22'];
+
+// ── MAP SETUP ────────────────────────────────────────────────
+const BASEMAPS = {
+  dark: L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',
+    {attribution:'© CARTO',maxZoom:19}),
+  osm:  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',
+    {attribution:'© OpenStreetMap',maxZoom:19}),
+  sat:  L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+    {attribution:'© Esri',maxZoom:19}),
+};
+
+const map = L.map('map',{zoomControl:false}).setView([-22.35,-43.2],8);
+BASEMAPS.dark.addTo(map);
+let activeBasemap = 'dark';
+
+map.on('mousemove', e=>{
+  document.getElementById('coords').textContent=`${e.latlng.lat.toFixed(5)}, ${e.latlng.lng.toFixed(5)}`;
+});
+
+function setBasemap(key){
+  map.removeLayer(BASEMAPS[activeBasemap]);
+  BASEMAPS[key].addTo(map);
+  activeBasemap = key;
+  ['dark','osm','sat'].forEach(k=>document.getElementById('bm-'+k).classList.toggle('on',k===key));
+}
+
+// ── STYLES & CLASSIFICATION ──────────────────────────────────
+const BASE_ST = {
+  imovel:     {color:'#0369a1',weight:0.8,fillColor:'#38bdf8',fillOpacity:.18},
+  consolidada:{color:'#b45309',weight:0.8,fillColor:'#f59e0b',fillOpacity:.3},
+  rl:         {color:'#065f46',weight:0.8,fillColor:'#22d3a0',fillOpacity:.3},
+  hidro:      {color:'#0e7490',weight:0.8,fillColor:'#06b6d4',fillOpacity:.35},
+  veg:        {color:'#166534',weight:0.8,fillColor:'#4ade80',fillOpacity:.28},
+  serv:       {color:'#6b21a8',weight:0.8,fillColor:'#a78bfa',fillOpacity:.28},
+  uso:        {color:'#c2410c',weight:0.8,fillColor:'#fb923c',fillOpacity:.32},
+  overlap:    {color:'#991b1b',weight:2.5,fillColor:'#f87171',fillOpacity:.5,dashArray:'6 4'},
+};
+
+let classification = 'none'; // 'none' | 'status' | 'area'
+let areaFilter = null;
+let activeFilterBin = null;
+
+function getImovelStyle(feat){
+  const p = feat.properties;
+  if(classification === 'status'){
+    const c = STATUS_COLORS[p.ind_status] || '#64748b';
+    return {color:'#0f172a',weight:0.5,fillColor:c,fillOpacity:.75};
+  }
+  if(classification === 'area'){
+    const ha = parseFloat(p.num_area||0);
+    const i  = AREA_BINS.findIndex((b,j)=>ha>=b && ha<AREA_BINS[j+1]);
+    const c  = i>=0 ? (AREA_COLORS[i]||'#022c22') : '#64748b';
+    return {color:'#0f172a',weight:0.5,fillColor:c,fillOpacity:.75};
+  }
+  return BASE_ST.imovel;
+}
+
+function setClass(cls){
+  classification = cls;
+  ['none','status','area'].forEach(c=>{
+    document.getElementById('cls-'+c).classList.toggle('on',c===cls);
+  });
+  renderLegend();
+  if(LAYERS.imovel){ LAYERS.imovel.eachLayer(l=>l.setStyle(getImovelStyle(l.feature))); }
+}
+
+function renderLegend(){
+  const box = document.getElementById('legend-box');
+  if(classification === 'none'){
+    box.innerHTML='<div style="font-size:11px;color:var(--t4);font-style:italic">Selecione uma classificação</div>';
+    return;
+  }
+  if(classification === 'status'){
+    box.innerHTML = Object.entries(STATUS_COLORS).map(([k,c])=>
+      `<div class="leg-item"><span class="leg-swatch" style="background:${c}"></span>${STATUS_L[k]||k}</div>`
+    ).join('');
+    return;
+  }
+  if(classification === 'area'){
+    box.innerHTML = AREA_LABELS.map((lbl,i)=>
+      `<div class="leg-item"><span class="leg-swatch" style="background:${AREA_COLORS[i]}"></span>${lbl} ha</div>`
+    ).join('');
+  }
+}
+
+// ── LAYER STATE ───────────────────────────────────────────────
+const LAYERS = {imovel:null,consolidada:null,rl:null,hidro:null,veg:null,serv:null,uso:null,overlap:null};
+const DATA   = {imovel:[],consolidada:[],rl:[],hidro:[],veg:[],serv:[],uso:[]};
+const LAYER_FILES = {
+  imovel:'area_imovel',consolidada:'area_consolidada',rl:'reserva_legal',
+  hidro:'hidrografia',veg:'vegetacao_nativa',serv:'servidao_administrativa',uso:'uso_restrito'
+};
+let currentMun = '', currentMode = 'explore';
+let highlightedLyr = null;
+let charts = {};
+
+// ── LOAD ──────────────────────────────────────────────────────
+function showLoad(msg='Carregando...',pct=10){
+  const el=document.getElementById('load');
+  el.classList.add('on');
+  document.getElementById('lmsg').textContent=msg;
+  document.getElementById('lfill').style.width=pct+'%';
+}
+function setPct(pct,msg){
+  document.getElementById('lfill').style.width=pct+'%';
+  if(msg) document.getElementById('lmsg').textContent=msg;
+}
+function hideLoad(){ document.getElementById('load').classList.remove('on'); }
+
+async function loadFile(layer, mun){
+  const safe=mun.replace(/ /g,'_').replace(/\//g,'_').replace(/'/g,'');
+  try{
+    const r=await fetch(`${LAYER_FILES[layer]}/${safe}.geojson`);
+    if(!r.ok){ console.warn(`Tile não encontrado: ${layer}/${safe}`); return []; }
+    return (await r.json()).features||[];
+  }catch(e){
+    if(window.location.protocol==='file:'){
+      document.getElementById('file-proto-warn').style.display='block';
+    }
+    console.error('Erro ao carregar tile:', layer, mun, e);
+    return [];
+  }
+}
+
+async function loadMunicipio(){
+  const mun=document.getElementById('sel-mun').value;
+  if(!mun) return;
+  currentMun=mun;
+  clearAllLayers();
+  areaFilter=null; activeFilterBin=null;
+  document.getElementById('filter-tag').style.display='none';
+
+  showLoad(`Carregando ${mun}...`,5);
+  const keys=Object.keys(LAYER_FILES);
+  for(let i=0;i<keys.length;i++){
+    setPct(8+i*12,`${mun}: ${keys[i]}...`);
+    DATA[keys[i]]=await loadFile(keys[i],mun);
+  }
+  setPct(95,'Renderizando...');
+  renderAllLayers();
+  updateCounts();
+  updateDashboard(mun);
+  if(currentMode==='overlap') runOverlap();
+  fitData();
+  hideLoad();
+  document.getElementById('mun-info').textContent=`${DATA.imovel.length.toLocaleString('pt-BR')} imóveis carregados`;
+}
+
+// ── RENDER ────────────────────────────────────────────────────
+function getFilteredImoveis(){
+  let feats = DATA.imovel;
+  if(areaFilter !== null){
+    feats = feats.filter(f=>{
+      const ha=parseFloat(f.properties.num_area||0);
+      return ha>=AREA_BINS[areaFilter] && ha<AREA_BINS[areaFilter+1];
+    });
+  }
+  return feats;
+}
+
+function buildImovelLayer(){
+  const feats=getFilteredImoveis();
+  if(!feats.length) return null;
+  return L.geoJSON({type:'FeatureCollection',features:feats},{
+    style: feat=>getImovelStyle(feat),
+    onEachFeature(feat,lyr){
+      lyr.on('click',e=>{
+        L.DomEvent.stopPropagation(e);
+        showInfo(feat.properties,'imovel');
+        if(highlightedLyr) highlightedLyr.setStyle(getImovelStyle(highlightedLyr.feature));
+        lyr.setStyle({weight:3,fillOpacity:.8,color:'#fff'});
+        highlightedLyr=lyr;
+      });
+      lyr.on('mouseover', function(e){
+        const p=feat.properties;
+        showTip(e,`<b>${p.municipio||'—'}</b><br>${TIPO_L[p.ind_tipo]||p.ind_tipo||'—'} · <span class="badge ${STATUS_C[p.ind_status]||''}">${STATUS_L[p.ind_status]||p.ind_status}</span><br>${parseFloat(p.num_area||0).toFixed(1)} ha`);
+      });
+      lyr.on('mouseout', function(){
+        hideTip();
+        if(lyr!==highlightedLyr) lyr.setStyle(getImovelStyle(feat));
+      });
+    }
+  });
+}
+
+function buildLayer(key){
+  if(!DATA[key].length) return null;
+  return L.geoJSON({type:'FeatureCollection',features:DATA[key]},{
+    style:BASE_ST[key],
+    onEachFeature(feat,lyr){
+      lyr.on('click',e=>{ L.DomEvent.stopPropagation(e); showInfo(feat.properties,key); });
+    }
+  });
+}
+
+function renderAllLayers(){
+  clearAllLayers();
+  // imovel
+  if(document.getElementById('lyr-imovel').checked){
+    const l=buildImovelLayer(); if(l){LAYERS.imovel=l;l.addTo(map);}
+  }
+  // others
+  ['consolidada','rl','hidro','veg','serv','uso'].forEach(key=>{
+    if(document.getElementById('lyr-'+key).checked){
+      const l=buildLayer(key); if(l){LAYERS[key]=l;l.addTo(map);}
+    }
+  });
+}
+
+function toggleLyr(key){
+  if(key==='overlap'){
+    if(LAYERS.overlap) document.getElementById('lyr-overlap').checked
+      ? map.addLayer(LAYERS.overlap):map.removeLayer(LAYERS.overlap);
+    return;
+  }
+  if(LAYERS[key]){map.removeLayer(LAYERS[key]);LAYERS[key]=null;}
+  const cb=document.getElementById('lyr-'+key);
+  if(!cb||!cb.checked||!DATA[key]?.length) return;
+  const l = key==='imovel' ? buildImovelLayer() : buildLayer(key);
+  if(l){LAYERS[key]=l;l.addTo(map);}
+  updateCounts();
+}
+
+function clearAllLayers(){
+  Object.keys(LAYERS).forEach(k=>{if(LAYERS[k]){map.removeLayer(LAYERS[k]);LAYERS[k]=null;}});
+  Object.keys(DATA).forEach(k=>DATA[k]=[]);
+}
+
+function updateCounts(){
+  const keys=['imovel','consolidada','rl','hidro','veg','serv','uso'];
+  keys.forEach(k=>{
+    const el=document.getElementById('cnt-'+k);
+    if(el) el.textContent=DATA[k].length.toLocaleString('pt-BR');
+  });
+}
+
+// ── TOOLTIP ───────────────────────────────────────────────────
+function showTip(e,html){
+  const tip=document.getElementById('tip');
+  tip.innerHTML=html;tip.style.display='block';
+  const r=document.getElementById('map-wrap').getBoundingClientRect();
+  const x=e.originalEvent.clientX-r.left+12;
+  const y=e.originalEvent.clientY-r.top-20;
+  tip.style.left=Math.min(x,r.width-230)+'px';
+  tip.style.top=Math.max(0,y)+'px';
+}
+function hideTip(){ document.getElementById('tip').style.display='none'; }
+map.on('click',hideTip);
+
+// ── INFO PANEL ────────────────────────────────────────────────
+const INFO_FIELDS = {
+  cod_imovel:'Código CAR',municipio:'Município',ind_status:'Status',
+  ind_tipo:'Tipo',num_area:'Área (ha)',mod_fiscal:'Mód. fiscais',
+  des_condic:'Condição',dat_criaca:'Criação',cod_tema:'Tema'
+};
+function showInfo(props,key){
+  let html='';
+  for(const [k,lbl] of Object.entries(INFO_FIELDS)){
+    let v=props[k]; if(v===undefined||v==='') continue;
+    if(k==='ind_status') v=`<span class="badge ${STATUS_C[v]||''}">${STATUS_L[v]||v}</span>`;
+    else if(k==='ind_tipo') v=TIPO_L[v]||v;
+    else if(k==='cod_tema') v=TEMA_L[v]||v;
+    else if(k==='num_area') v=parseFloat(v).toFixed(2)+' ha';
+    else if(k==='mod_fiscal') v=parseFloat(v).toFixed(2);
+    else if(k==='cod_imovel') v=`<span style="font-size:9px;word-break:break-all">${v}</span>`;
+    html+=`<div class="ifield"><span class="ik">${lbl}</span><span class="iv">${v}</span></div>`;
+  }
+  document.getElementById('info-box').innerHTML=html||'<span style="font-style:italic">Sem dados</span>';
+}
+
+// ── DASHBOARD ─────────────────────────────────────────────────
+const CH_OPTS_BASE = {
+  responsive:true,maintainAspectRatio:false,
+  plugins:{legend:{display:false}},
+  scales:{
+    x:{ticks:{color:'#4a7fa8',font:{size:9}},grid:{color:'rgba(30,48,80,.5)'},border:{color:'var(--border)'}},
+    y:{ticks:{color:'#4a7fa8',font:{size:9}},grid:{color:'rgba(30,48,80,.5)'},border:{color:'var(--border)'}}
+  }
+};
+
+function updateDashboard(mun){
+  const s=STATS[mun]; if(!s) return;
+  document.getElementById('dash-empty').style.display='none';
+  document.getElementById('dash-content').style.display='block';
+  document.getElementById('dash-mun-title').textContent=mun;
+
+  document.getElementById('d-n').textContent=s.n.toLocaleString('pt-BR');
+  document.getElementById('d-area').textContent=(s.area/1000).toFixed(1)+'k ha';
+  document.getElementById('d-rl').textContent=(s.com_rl||0).toLocaleString('pt-BR');
+  document.getElementById('d-semrl').textContent=(s.sem_rl||0).toLocaleString('pt-BR');
+
+  const prl=s.pct_rl||0, ph=s.pct_hidro||0, pu=s.com_uso?Math.round(s.com_uso/s.n*100):0;
+  ['rl','hidro','uso'].forEach((k,i)=>{
+    const pct=[prl,ph,pu][i];
+    document.getElementById('d-p'+k[0]).textContent=pct+'%';
+    document.getElementById('bar-'+k).style.width=pct+'%';
+  });
+  // fix ids
+  document.getElementById('d-prl').textContent=prl+'%';
+  document.getElementById('d-ph').textContent=ph+'%';
+  document.getElementById('d-pu').textContent=pu+'%';
+
+  // Status donut
+  const st=s.status||{};
+  if(charts.status) charts.status.destroy();
+  charts.status=new Chart(document.getElementById('ch-status'),{
+    type:'doughnut',
+    data:{labels:Object.keys(st).map(k=>STATUS_L[k]||k),
+      datasets:[{data:Object.values(st),
+        backgroundColor:Object.keys(st).map(k=>STATUS_COLORS[k]||'#334155'),borderWidth:0,hoverOffset:6}]},
+    options:{responsive:true,maintainAspectRatio:false,
+      plugins:{legend:{position:'right',labels:{color:'#7fb3e8',font:{size:9},boxWidth:10,padding:8}},
+        tooltip:{callbacks:{label:ctx=>`${ctx.label}: ${ctx.parsed.toLocaleString('pt-BR')}`}}},
+      onClick(evt,els){ if(els.length>0){
+        const k=Object.keys(st)[els[0].index];
+        setClass('status'); // highlight on map by status
+      }}
+    }
+  });
+
+  // Condição bar
+  const cd=s.condic||{};
+  const cdKeys=Object.keys(cd).sort((a,b)=>cd[b]-cd[a]).slice(0,7);
+  const cdShort=k=>k.replace('Analisado, ','').replace('Aguardando analise','Ag. análise')
+    .replace('Cancelado por ','Cancel.: ').slice(0,32);
+  if(charts.condic) charts.condic.destroy();
+  charts.condic=new Chart(document.getElementById('ch-condic'),{
+    type:'bar',
+    data:{labels:cdKeys.map(cdShort),
+      datasets:[{data:cdKeys.map(k=>cd[k]),backgroundColor:'#38bdf8',borderRadius:3,hoverBackgroundColor:'#7dd3fc'}]},
+    options:{...CH_OPTS_BASE,indexAxis:'y',
+      plugins:{...CH_OPTS_BASE.plugins,
+        tooltip:{callbacks:{label:ctx=>`${ctx.parsed.x.toLocaleString('pt-BR')} imóveis`}}}}
+  });
+
+  // Area histogram — from loaded data
+  buildAreaChart();
+}
+
+function buildAreaChart(){
+  const areas=DATA.imovel.map(f=>parseFloat(f.properties.num_area||0)).filter(v=>v>0);
+  const counts=new Array(AREA_LABELS.length).fill(0);
+  areas.forEach(a=>{ const i=AREA_BINS.findIndex((b,j)=>a>=b&&a<AREA_BINS[j+1]); if(i>=0) counts[i]++; });
+  const bgColors=AREA_LABELS.map((_,i)=>activeFilterBin===i?'#f59e0b':'#22d3a0');
+
+  if(charts.area) charts.area.destroy();
+  charts.area=new Chart(document.getElementById('ch-area'),{
+    type:'bar',
+    data:{labels:AREA_LABELS,
+      datasets:[{data:counts,backgroundColor:bgColors,borderRadius:3,hoverBackgroundColor:'#34d399'}]},
+    options:{...CH_OPTS_BASE,
+      plugins:{...CH_OPTS_BASE.plugins,
+        tooltip:{callbacks:{label:ctx=>`${ctx.parsed.y.toLocaleString('pt-BR')} imóveis`}}},
+      onClick(evt,els){
+        if(els.length>0){
+          const i=els[0].index;
+          if(activeFilterBin===i){ clearFilter(); return; }
+          activeFilterBin=i; areaFilter=i;
+          document.getElementById('filter-tag').style.display='flex';
+          document.getElementById('filter-label').textContent=`Filtro: ${AREA_LABELS[i]} ha`;
+          buildAreaChart();
+          reRenderImovel();
+        }
+      }
+    }
+  });
+}
+
+function clearFilter(){
+  areaFilter=null; activeFilterBin=null;
+  document.getElementById('filter-tag').style.display='none';
+  buildAreaChart();
+  reRenderImovel();
+}
+
+function reRenderImovel(){
+  if(LAYERS.imovel){map.removeLayer(LAYERS.imovel);LAYERS.imovel=null;}
+  if(document.getElementById('lyr-imovel').checked){
+    const l=buildImovelLayer(); if(l){LAYERS.imovel=l;l.addTo(map);}
+  }
+}
+
+// ── OVERLAP ───────────────────────────────────────────────────
+function setMode(mode){
+  currentMode=mode;
+  document.getElementById('btn-explore').classList.toggle('on',mode==='explore');
+  document.getElementById('btn-overlap').classList.toggle('on',mode==='overlap');
+  document.getElementById('row-ov').style.display=mode==='overlap'?'flex':'none';
+  document.getElementById('ml-ov-row').style.display=mode==='overlap'?'block':'none';
+  if(mode==='overlap'){
+    if(!currentMun){alert('Selecione um município primeiro!');setMode('explore');return;}
+    runOverlap();
+  } else {
+    if(LAYERS.overlap){map.removeLayer(LAYERS.overlap);LAYERS.overlap=null;}
+  }
+}
+
+function runOverlap(){
+  showLoad('Calculando sobreposições...',10);
+  setTimeout(()=>{
+    const ims=DATA.imovel, hids=DATA.hidro;
+    const overFeats=[], pairs=[];
+    const N=Math.min(ims.length,250);
+
+    // CAR × CAR
+    for(let i=0;i<N;i++){
+      for(let j=i+1;j<N;j++){
+        try{
+          const fi=turf.polygon(ims[i].geometry.coordinates);
+          const fj=turf.polygon(ims[j].geometry.coordinates);
+          if(!turf.booleanIntersects(fi,fj)) continue;
+          const inter=turf.intersect(fi,fj); if(!inter) continue;
+          const ha=turf.area(inter)/10000; if(ha<0.01) continue;
+          inter.properties={tipo:'CAR×CAR',ha,
+            cod_a:ims[i].properties.cod_imovel,cod_b:ims[j].properties.cod_imovel};
+          overFeats.push(inter);
+          pairs.push({tipo:'CAR×CAR',ha,
+            la:ims[i].properties.cod_imovel.slice(-8),lb:ims[j].properties.cod_imovel.slice(-8)});
+        }catch(e){}
+      }
+      if(i%50===0) setPct(10+Math.round(i/N*50),`CAR×CAR ${i}/${N}...`);
+    }
+
+    // CAR × APP
+    setPct(65,'CAR × Hidrografia...');
+    const hSet=new Set(hids.map(f=>f.properties.cod_imovel));
+    ims.forEach(im=>{
+      const cod=im.properties.cod_imovel;
+      if(!hSet.has(cod)) return;
+      hids.filter(h=>h.properties.cod_imovel===cod).forEach(h=>{
+        try{
+          const fi=turf.polygon(im.geometry.coordinates);
+          const fh=turf.polygon(h.geometry.coordinates);
+          if(!turf.booleanIntersects(fi,fh)) return;
+          const inter=turf.intersect(fi,fh); if(!inter) return;
+          const ha=turf.area(inter)/10000; if(ha<0.001) return;
+          inter.properties={tipo:'CAR×APP',ha,cod_a:cod,tema:TEMA_L[h.properties.cod_tema]||h.properties.cod_tema};
+          overFeats.push(inter);
+          pairs.push({tipo:'CAR×APP',ha,la:cod.slice(-8),lb:TEMA_L[h.properties.cod_tema]||h.properties.cod_tema});
+        }catch(e){}
+      });
+    });
+
+    if(LAYERS.overlap){map.removeLayer(LAYERS.overlap);}
+    LAYERS.overlap=L.geoJSON({type:'FeatureCollection',features:overFeats},{
+      style:f=>f.properties?.tipo==='CAR×APP'
+        ?{...BASE_ST.overlap,fillColor:'#fb923c',color:'#c2410c'}
+        :BASE_ST.overlap,
+      onEachFeature(feat,lyr){
+        lyr.on('click',e=>{
+          L.DomEvent.stopPropagation(e);
+          const p=feat.properties;
+          showInfo({cod_imovel:p.cod_a,cod_tema:p.tema||p.cod_b,num_area:p.ha.toFixed(3),ind_tipo:p.tipo},'overlap');
+          map.fitBounds(lyr.getBounds(),{padding:[40,40]});
+        });
+      }
+    });
+    if(document.getElementById('lyr-overlap')?.checked) LAYERS.overlap.addTo(map);
+    document.getElementById('cnt-ov').textContent=pairs.length;
+
+    // Build overlap list in sidebar
+    pairs.sort((a,b)=>b.ha-a.ha);
+    const carcar=pairs.filter(p=>p.tipo==='CAR×CAR');
+    const carapp=pairs.filter(p=>p.tipo==='CAR×APP');
+    // Show in search tab
+    document.getElementById('s-results').innerHTML=
+      `<div style="padding:8px 14px;font-size:10px;color:var(--t4);font-weight:600;text-transform:uppercase;letter-spacing:.5px;border-bottom:1px solid var(--border)">
+        CAR×CAR: ${carcar.length} &nbsp;|&nbsp; CAR×APP: ${carapp.length}
+      </div>`+
+      pairs.slice(0,80).map((p,i)=>`
+        <div class="ov-item" onclick="zoomOv(${i})">
+          <div class="ov-pair">${p.la} × ${p.lb}</div>
+          <div class="ov-meta"><span class="ov-type">${p.tipo}</span><span class="ov-ha">${p.ha.toFixed(2)} ha</span></div>
+        </div>`).join('');
+    showTab('search');
+    hideLoad();
+  },100);
+}
+
+function zoomOv(idx){
+  const lyrs=[]; if(LAYERS.overlap) LAYERS.overlap.eachLayer(l=>lyrs.push(l));
+  if(lyrs[idx]) map.fitBounds(lyrs[idx].getBounds(),{padding:[50,50]});
+}
+
+// ── SEARCH ────────────────────────────────────────────────────
+let allIndex=[]; let searchDone=false;
+async function ensureIndex(){
+  if(searchDone) return;
+  searchDone=true;
+  try{
+    const r=await fetch('overview_imovel_points.geojson');
+    allIndex=(await r.json()).features||[];
+    document.getElementById('s-count').textContent=`${allIndex.length.toLocaleString('pt-BR')} imóveis indexados`;
+  }catch(e){}
+}
+
+let searchTimer=null;
+function doSearch(){
+  clearTimeout(searchTimer);
+  searchTimer=setTimeout(async()=>{
+    await ensureIndex();
+    const cod=document.getElementById('s-cod').value.trim().toLowerCase();
+    const mun=document.getElementById('s-mun').value.trim().toLowerCase();
+    const tipo=document.getElementById('s-tipo').value;
+    if(!cod&&!mun&&!tipo){document.getElementById('s-results').innerHTML='';return;}
+    const res=allIndex.filter(f=>{
+      const p=f.properties;
+      if(cod&&!p.cod_imovel?.toLowerCase().includes(cod)) return false;
+      if(mun&&!p.municipio?.toLowerCase().includes(mun)) return false;
+      if(tipo&&p.ind_tipo!==tipo) return false;
+      return true;
+    }).slice(0,60);
+    document.getElementById('s-count').textContent=`${res.length} resultado(s)`;
+    document.getElementById('s-results').innerHTML=res.length===0
+      ? '<div style="padding:12px 14px;font-size:11px;color:var(--t4)">Nenhum resultado.</div>'
+      : res.map(f=>{
+          const p=f.properties;
+          return `<div class="sr" onclick="jumpTo('${p.municipio}','${p.cod_imovel}')">
+            <div class="sr-cod">${p.cod_imovel||'—'}</div>
+            <div class="sr-row">
+              ${p.municipio||'—'}&nbsp;
+              <span class="badge ${STATUS_C[p.ind_status]||''}">${STATUS_L[p.ind_status]||p.ind_status}</span>
+              &nbsp;${TIPO_L[p.ind_tipo]||p.ind_tipo||''}
+              &nbsp;<span style="color:var(--t4)">${parseFloat(p.num_area||0).toFixed(1)} ha</span>
+            </div>
+          </div>`;
+        }).join('');
+  },250);
+}
+
+async function jumpTo(mun,cod){
+  if(currentMun!==mun){
+    document.getElementById('sel-mun').value=mun;
+    await loadMunicipio();
+  }
+  if(LAYERS.imovel) LAYERS.imovel.eachLayer(l=>{
+    if(l.feature?.properties?.cod_imovel===cod){
+      map.fitBounds(l.getBounds(),{padding:[80,80]});
+      showInfo(l.feature.properties,'imovel');
+      if(highlightedLyr) highlightedLyr.setStyle(getImovelStyle(highlightedLyr.feature));
+      l.setStyle({weight:3,fillOpacity:.85,color:'#fff'});
+      highlightedLyr=l;
+    }
+  });
+  showTab('layers');
+}
+
+// ── TABS ──────────────────────────────────────────────────────
+function showTab(tab){
+  ['layers','stats','search'].forEach(t=>{
+    document.getElementById('tp-'+t).classList.toggle('on',t===tab);
+    document.getElementById('tab-'+t).classList.toggle('on',t===tab);
+  });
+  if(tab==='search') ensureIndex();
+}
+
+// ── NAV ───────────────────────────────────────────────────────
+function goHome(){map.setView([-22.35,-43.2],8);}
+function fitData(){
+  const l=LAYERS.imovel||LAYERS.rl||LAYERS.hidro;
+  if(l){try{map.fitBounds(l.getBounds(),{padding:[20,20]});}catch(e){}}
+}
+
+let medindo=false,medPts=[],medLyr=null;
+function toggleMedir(){
+  medindo=!medindo;
+  document.getElementById('tb-medir').classList.toggle('on',medindo);
+  if(!medindo){if(medLyr){map.removeLayer(medLyr);medLyr=null;}medPts=[];return;}
+  map.once('click',function medir(e){
+    if(!medindo) return;
+    medPts.push(e.latlng);
+    if(medPts.length>1){
+      if(medLyr) map.removeLayer(medLyr);
+      const poly=L.polygon(medPts,{color:'#f59e0b',weight:2,fillColor:'#f59e0b',fillOpacity:.1});
+      medLyr=poly.addTo(map);
+      try{
+        const ha=turf.area(turf.polygon([[...medPts.map(p=>[p.lng,p.lat]),[medPts[0].lng,medPts[0].lat]]]))/10000;
+        poly.bindPopup(`<b>${ha.toFixed(3)} ha</b><br><small>Clique para mais pontos</small>`).openPopup();
+      }catch(e){}
+    }
+    map.once('click',medir);
+  });
+}
+
+// ── EXPORT ───────────────────────────────────────────────────
+function exportData(){
+  const feats=getFilteredImoveis();
+  if(!feats.length){alert('Carregue um município primeiro.');return;}
+  const gj=JSON.stringify({type:'FeatureCollection',features:feats});
+  const a=document.createElement('a');
+  a.href='data:application/json,'+encodeURIComponent(gj);
+  a.download=`CAR_${(currentMun||'RJ').replace(/ /g,'_')}.geojson`;
+  a.click();
+}
+
+// ── SQL ───────────────────────────────────────────────────────
+function showSQL(){
+  const sql=`-- Geoportal CAR/RJ – Queries PostGIS
+-- Importar: shp2pgsql -s 4674 AREA_IMOVEL_1.shp area_imovel | psql -d car_rj
+
+-- 1. SOBREPOSIÇÃO CAR × CAR
+SELECT a.cod_imovel, b.cod_imovel, a.municipio,
+  ROUND((ST_Area(ST_Transform(ST_Intersection(a.geom,b.geom),31983))/10000)::numeric,4) AS ha
+FROM area_imovel a
+JOIN area_imovel b ON ST_Intersects(a.geom,b.geom)
+  AND a.cod_imovel < b.cod_imovel AND a.ind_status='AT' AND b.ind_status='AT'
+WHERE ST_Area(ST_Transform(ST_Intersection(a.geom,b.geom),31983))>100
+ORDER BY ha DESC;
+
+-- 2. CAR × APP (Hidrografia)
+SELECT i.cod_imovel, i.municipio, h.cod_tema,
+  ROUND((ST_Area(ST_Transform(ST_Intersection(i.geom,h.geom),31983))/10000)::numeric,4) AS ha_app
+FROM area_imovel i JOIN hidrografia h ON i.cod_imovel=h.cod_imovel
+WHERE ST_Intersects(i.geom,h.geom) AND i.ind_status='AT' ORDER BY ha_app DESC;
+
+-- 3. SEM RESERVA LEGAL
+SELECT i.cod_imovel, i.municipio, i.num_area
+FROM area_imovel i
+LEFT JOIN reserva_legal r ON i.cod_imovel=r.cod_imovel AND r.ind_status='AT'
+WHERE i.ind_status='AT' AND r.cod_imovel IS NULL ORDER BY i.num_area DESC;
+
+-- ÍNDICES (obrigatório)
+CREATE INDEX ON area_imovel USING GIST(geom);
+CREATE INDEX ON hidrografia USING GIST(geom);
+CREATE INDEX ON reserva_legal USING GIST(geom);`;
+  const w=window.open('','_blank','width=680,height=560,scrollbars=yes');
+  w.document.write('<html><head><title>SQL</title><style>body{background:#0b0f19;color:#bfdbfe;font-family:monospace;padding:20px;font-size:12px;line-height:1.8}pre{white-space:pre-wrap;background:#111827;border:1px solid #1e3050;padding:16px;border-radius:6px}button{background:#1a2235;border:1px solid #2d4a6e;color:#7fb3e8;padding:6px 16px;border-radius:4px;cursor:pointer;margin-bottom:12px;font-size:12px}</style></head><body><h2 style="color:#22d3a0;margin-bottom:12px;font-size:14px">SQL/PostGIS — CAR/RJ</h2><button onclick="navigator.clipboard.writeText(document.querySelector('pre').textContent)">📋 Copiar</button><pre>'+sql.replace(/</g,'&lt;')+'</pre></body></html>');
+}
+
+// ── INIT ──────────────────────────────────────────────────────
+
+// Detect file:// protocol
+if(window.location.protocol === 'file:'){
+  document.getElementById('file-proto-warn').style.display='block';
+}
+
+showLoad('Iniciando Geoportal CAR/RJ...',5);
+setTimeout(()=>{setPct(100);setTimeout(hideLoad,300);},700);
+</script>
+</body>
+</html>

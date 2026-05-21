@@ -1,0 +1,40 @@
+╔══════════════════════════════════════════════════════════╗
+║         GEOPORTAL CAR · RIO DE JANEIRO · SICAR 2026     ║
+╚══════════════════════════════════════════════════════════╝
+
+IMPORTANTE: Não abra o index.html diretamente pelo explorador
+de arquivos! É necessário um servidor HTTP local.
+
+════════════════════════════════════════════
+ COMO INICIAR (escolha uma opção)
+════════════════════════════════════════════
+
+▸ WINDOWS:
+  Duplo clique em → INICIAR_WINDOWS.bat
+  (Python precisa estar instalado)
+
+▸ MAC / LINUX:
+  Terminal: ./INICIAR_MAC_LINUX.sh
+  OU: python3 -m http.server 8080
+
+▸ NODEJS (qualquer sistema):
+  npx serve .
+
+▸ VS CODE:
+  Instale "Live Server" → clique direito no index.html → Open with Live Server
+
+Depois acesse: http://localhost:8080
+
+════════════════════════════════════════════
+ ESTRUTURA DOS DADOS
+════════════════════════════════════════════
+area_imovel/          → 90 tiles por município (CAR)
+area_consolidada/     → Áreas Consolidadas
+reserva_legal/        → Reserva Legal
+hidrografia/          → Hidrografia / APP
+vegetacao_nativa/     → Vegetação Nativa
+servidao_administrativa/ → Servidão
+uso_restrito/         → Uso Restrito
+
+Fonte: SICAR/IBAMA · Atualização: Maio 2026
+CRS: SIRGAS 2000 (EPSG:4674)
