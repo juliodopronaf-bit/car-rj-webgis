@@ -656,13 +656,15 @@ async function loadMunicipio(){
     DATA[keys[i]]=await loadFile(keys[i],mun);
   }
   setPct(95,'Renderizando...');
-  renderAllLayers();
-  map.invalidateSize();
-  updateCounts();
-  updateDashboard(mun);
-  if(currentMode==='overlap') runOverlap();
-  fitData();
-  hideLoad();
+  setTimeout(()=>{
+    renderAllLayers();
+    map.invalidateSize();
+    updateCounts();
+    updateDashboard(mun);
+    if(currentMode==='overlap') runOverlap();
+    fitData();
+    hideLoad();
+  },50);
   document.getElementById('mun-info').textContent=`${DATA.imovel.length.toLocaleString('pt-BR')} imoveis carregados`;
 }
 
